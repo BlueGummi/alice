@@ -287,6 +287,9 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         f_contents.replace_range(0..eol + 1, ""); // delete line in string
     }
     instructions.push(Instruction::HALT);
+    if config.debug {
+        println!("{:?}", instructions);
+    }
     instructions
 }
 
