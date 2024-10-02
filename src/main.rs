@@ -134,6 +134,7 @@ impl CPU {
                 self.registers[reg2] = temp;
             }
             0b110 => {
+                // DIVIDE (DIV)
                 if self.registers[reg1] != 0 {
                     self.registers[reg2] /= self.registers[reg1];
                 } else {
