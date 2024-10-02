@@ -220,6 +220,22 @@ fn read_file(f_name: String) -> String {
     contents
 }
 // we want to format the assembly like this: INSTRUCTION, SOURCE, DESTINATION
+
+
+
+
+
+/* TODO: Rewrite file parsing logic to prepare for JMP instruction
+    How to do this?
+    Create a second clone of f_contents, add line numbers to each line on this
+    When JMP is read, find the line that the JMP instruction is looking for, then make a clone
+    of the clone and cutoff the clone's clone's contents so that they start at the line
+    JMP is looking for
+
+    Then,
+    make the f_contents string identical to the clone's clone, without the leading line numbers.
+    if JMP is called again, refer back to the original clone and rinse and repeat :)
+*/
 fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     let mut instructions = Vec::new();
     let config = declare_config();
