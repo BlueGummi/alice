@@ -245,7 +245,10 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     let mut eol;
     let mut dest;
     let mut instruc;
-    let mut c_contents = &f_contents;
+    let mut c_contents = append_line_numbers(&f_contents);
+    if config.debug {
+        println!("File contents with line numbers:\n{}", c_contents);
+    }
     loop {
         if f_contents.is_empty(){
             eprintln!("Error, provided input file is empty."); 
@@ -369,6 +372,11 @@ fn delete_first_letter(s: &str) -> &str {
     s // return the original string if it's empty or the first character is not a letter
 }
 
-fn append_line_numbers(){
-    // TODO: write this lil boi
+fn append_line_numbers(input: &str) -> String {
+    input
+        .lines()
+        .enumerate()
+        .map(|(i, line)| format!("{} {}", i + 1, line))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
