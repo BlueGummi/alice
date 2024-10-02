@@ -4,3 +4,6 @@ SWAP r1, r2
 MOV 8, r3
 MOV 16, r4
 DIV r4, r3
+HALT
+MOV 4, r7
+MOV 5, r6

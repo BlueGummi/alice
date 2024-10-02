@@ -7,7 +7,7 @@ use std::fs;
 
 mod config;
 const MEMORY_SIZE: usize = 65536;
-
+// args for CLAP (TODO: IMPLEMENT)
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
@@ -15,6 +15,7 @@ struct Args {
     file: String,
 }
 
+// Declare config in config.rs
 pub fn declare_config() -> Config {
     let config_content = match fs::read_to_string("config.toml") {
         Ok(content) => content,
@@ -30,6 +31,8 @@ pub fn declare_config() -> Config {
         }
     }
 }
+
+// Add instructions here
 #[derive(Debug)]
 enum Instruction {
     ADD(usize, usize), // (destination, source)
@@ -38,9 +41,11 @@ enum Instruction {
     SUB(usize, usize), // (destination, source)
     SWAP(usize, usize), // (reg1, reg2)
     DIV(usize, usize),
+    CLR(usize), // clear one register
     HALT,
 }
 
+// CPU struct
 struct CPU {
     registers: [u16; 8],
     memory: [u16; MEMORY_SIZE],
@@ -53,18 +58,18 @@ impl CPU {
         CPU {
             registers: [0; 8],
             memory: [0; MEMORY_SIZE],
-            pc: 0,
-            running: false,
+            pc: 0, // default program counter to 0
+            running: false, // create new CPU when called
         }
     }
 
-    fn load_program(&mut self, program: &[Instruction]) {
+    fn load_program(&mut self, program: &[Instruction]) { // load the program into the memory of the CPU
         for (i, instruction) in program.iter().enumerate() {
             self.memory[i] = self.encode_instruction(instruction);
         }
     }
 
-    fn encode_instruction(&self, instruction: &Instruction) -> u16 {
+    fn encode_instruction(&self, instruction: &Instruction) -> u16 { // encode instructions to binary
         match instruction {
             Instruction::ADD(dst, src) => {
                 (0b001 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
@@ -82,14 +87,21 @@ impl CPU {
             Instruction::DIV(dst, src) => {
                 (0b110 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
             }
-            Instruction::HALT => 0x0000,
+            Instruction::CLR(src) => {
+                (0b111 << 12) | ((*src as u16) << 4)
+            }
+            Instruction::HALT => 0x0000, // for MOV, or any values where raw data is taken, do & 0xFF (i think)
         }
     }
 
     fn fetch_instruction(&mut self) -> u16 {
+        let config = declare_config();
         let instruction = self.memory[self.pc];
-        self.pc += 1;
-        instruction
+        self.pc += 1;// add to program counter
+        if config.debug {
+            println!("{:?}", self.pc);
+        }
+        instruction 
     }
 
     fn execute_instruction(&mut self, instruction: u16) {
@@ -97,7 +109,7 @@ impl CPU {
         let reg1 = ((instruction >> 8) & 0xF) as usize;
         let reg2 = ((instruction >> 4) & 0xF) as usize;
         let value = (instruction & 0xFF) as u16;
-
+        // add what the opcode does, reg1 is the second argument, reg2 is the first
         match opcode {
             0b001 => {
                 // ADD
@@ -130,6 +142,9 @@ impl CPU {
                     std::process::exit(0);
                 }
             }
+            0b111 => {
+                self.registers[reg1] = 0; //clear
+            }
             _ => {
                 // Halt or Invalid opcode
                 self.running = false;
@@ -137,7 +152,7 @@ impl CPU {
         }
     }
 
-    fn run(&mut self) {
+    fn run(&mut self) { // run the CPU and use the previous functions
         self.running = true;
         while self.running {
             let instruction = self.fetch_instruction();
@@ -177,7 +192,7 @@ fn main() {
     println!("R4: {}", cpu.registers[4].to_string().color(Colors::CyanFg));
     println!("R5: {}", cpu.registers[5].to_string().color(Colors::CyanFg));
     println!("R6: {}", cpu.registers[6].to_string().color(Colors::CyanFg));
-    println!("R7: {}", cpu.registers[7].to_string().color(Colors::CyanFg));
+    println!("R7: {}", cpu.registers[7].to_string().color(Colors::CyanFg)); //this code is written like this as i can see where i am in the program with ugly code
     if config.debug {
         println!(
             "{}\n{}\n",
@@ -196,7 +211,7 @@ fn read_file(f_name: String) -> String {
     } else {
         let _ = File::create(&f_name);
         println!("Could not find file, file created");
-        fs::write(&f_name, "MOV 1, 5\nMOV 2, 3\nADD 0, 1\nSUB 1, 2\nMUL 1,2")
+        fs::write(&f_name, "MOV 1, 5\nMOV 2, 3\nADD 0, 1\nSUB 1, 2\nMUL 1,2") //default ASM code
             .expect("Could not write to file");
         contents =
             fs::read_to_string(format!("{}", f_name)).expect("File found, read unsuccessful.");
@@ -213,9 +228,10 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     let mut eol;
     let mut dest;
     let mut instruc;
+    let mut c_contents = &f_contents;
     loop {
         if f_contents.is_empty(){
-            eprintln!("Error, provided input file is empty.");
+            eprintln!("Error, provided input file is empty."); 
             std::process::exit(0);
         }
         if f_contents[0..4].contains("HALT") {
@@ -281,7 +297,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         instructions.push(instruction);
         if !f_contents.trim().contains("\n") {
             println!("Finished parsing code.");
-            break;
+            break; // push one instruction to the instruction vector to execute
         }
 
         f_contents.replace_range(0..eol + 1, ""); // delete line in string
@@ -292,6 +308,10 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     }
     instructions
 }
+
+
+
+// functions here aren't mission critical, moreso "helper" little functions to get small jobs done :)
 
 fn path_exists(path: &str) -> bool {
     fs::metadata(path).is_ok()
@@ -330,4 +350,8 @@ fn delete_first_letter(s: &str) -> &str {
         }
     }
     s // return the original string if it's empty or the first character is not a letter
+}
+
+fn append_line_numbers(){
+    // TODO: write this lil boi
 }
