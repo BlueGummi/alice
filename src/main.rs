@@ -43,6 +43,8 @@ enum Instruction {
     SWAP(usize, usize), // (reg1, reg2)
     DIV(usize, usize),
     CLR(usize), // clear one register
+    INC(usize),
+    DEC(usize),
     HALT,
 }
 
@@ -102,6 +104,14 @@ impl CPU {
                 // CLR: 0x7x0
                 (0x7 << 12) | ((*src as u16) << 4)
             }
+            Instruction::INC(src) => {
+                // INC: 0x8
+                (0x8 << 12) | ((*src as u16) << 4)
+            }
+            Instruction::DEC(src) => {
+                // DEC: 0x9xx
+                (0x9 << 12) | ((*src as u16) << 4)
+            }
             Instruction::HALT => {
                 // HALT: 0x0000
                 0x0000
@@ -141,7 +151,11 @@ impl CPU {
             }
             0x4 => {
                 // SUB
-                self.registers[reg1] -= self.registers[reg2];
+                if self.registers[reg1] >= self.registers[reg2] {
+                    self.registers[reg1] -= self.registers[reg2];
+                } else {
+                    neg_num_err("SUB");
+                }
             }
             0x5 => {
                 // SWAP
@@ -163,6 +177,18 @@ impl CPU {
             0x7 => {
                 // CLR
                 self.registers[reg1] = 0; // clear register
+            }
+            0x8 => {
+                // INC
+                self.registers[reg1] += 1; // add one to register provided
+            }
+            0x9 => {
+                // DEC
+                if self.registers[reg1] >= 1 {
+                    self.registers[reg1] -= 1;
+                } else {
+                    neg_num_err("SUB");
+                }
             }
             _ => {
                 // halt or Invalid opcode
@@ -258,7 +284,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     let mut eol;
     let mut dest;
     let mut instruc;
-    let mut c_contents = append_line_numbers(&f_contents);
+    let c_contents = append_line_numbers(&f_contents);
     if config.verbose_debug {
         println!("File contents with line numbers:\n{}", c_contents);
     }
@@ -275,18 +301,26 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         }
         remove_comments(&mut f_contents);
 
-        comma_loc = f_contents.find(",").unwrap(); // comma_loc is the location of the comma in assembly
-        space_loc = f_contents.find(" ").unwrap(); // space_loc is the location of the space
         if f_contents.contains("\n") {
             eol = f_contents.find("\n").unwrap(); // if newline found
         } else {
             eol = f_contents.len(); // if no newline
         }
-        src = delete_first_letter(f_contents[space_loc..comma_loc].trim()); // src will find the first value
-        dest = delete_first_letter(f_contents[comma_loc + 1..eol].trim());
+        space_loc = f_contents.find(" ").unwrap(); // space_loc is the location of the space
+        if f_contents[0..eol].contains(","){
+            comma_loc = f_contents.find(",").unwrap(); // comma_loc is the location of the comma in assembly
+            src = delete_first_letter(f_contents[space_loc..comma_loc].trim()); // src will find the first value
+            dest = delete_first_letter(f_contents[comma_loc + 1..eol].trim());
+        } else {
+            src = delete_first_letter(f_contents[space_loc..eol].trim());
+            dest = "0";
+            comma_loc = eol;
+            println!("src {:?}", src);
+        }
+
         instruc = f_contents[..space_loc].trim();
         if config.verbose_debug {
-            /// colorful stuff to print, debug
+            // colorful stuff to print
             print!("{}\n", "FOUND INSTRUCTION".color(Colors::BlueFg));
             print!("{}", "INSTRUCTION:".color(Colors::RedFg));
             print!("{}\n", instruc.color(Colors::BrightMagentaFg));
@@ -311,7 +345,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
 
         // check the result and assign to a variable
         match src_u16 {
-            Ok(v) => {}
+            Ok(_v) => {}
             Err(_) => {
                 println!("Value is too large to fit in a u16!");
             }
@@ -320,9 +354,12 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             "ADD" => Instruction::ADD(dest_i, src_i),
             "SUB" => Instruction::SUB(dest_i, src_i),
             "MUL" => Instruction::MUL(dest_i, src_i),
-            "MOV" => Instruction::MOV(dest_i, src_u16.expect("Something went wrong")),
+            "MOV" => Instruction::MOV(dest_i, src_u16.expect("Something went wrong with MOV")),
             "SWAP" => Instruction::SWAP(dest_i, src_i),
             "DIV" => Instruction::DIV(dest_i, src_i),
+            "CLR" => Instruction::CLR(src_i),
+            "DEC" => Instruction::DEC(src_i),
+            "INC" => Instruction::INC(src_i),
             "HALT" => Instruction::HALT,
             // add more instruction matches as needed
             _ => {
@@ -393,4 +430,10 @@ fn append_line_numbers(input: &str) -> String {
         .map(|(i, line)| format!("{} {}", i + 1, line))
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn neg_num_err(instruction: &str) {
+    eprintln!("{}{}{}", "ERROR, ".color(Colors::RedFg), instruction.color(Colors::YellowFg), 
+    " WILL RESULT IN NEGATIVE NUMBER.\nTERMINATING.".color(Colors::RedFg));
+    std::process::exit(0);
 }
