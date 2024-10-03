@@ -1,4 +1,5 @@
 MOV 5, r3
 MOV 5, r2
 ADD r3, r2
-PRINT r3
+POW r2, 2
+PRINT r2

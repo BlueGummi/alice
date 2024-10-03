@@ -45,7 +45,8 @@ enum Instruction {
     CLR(usize), // clear one register
     INC(usize),
     DEC(usize),
-    PRINT(usize), // print a register to the console
+    PRINT(usize),    // print a register to the console
+    POW(usize, u16), // raise a value in a register to the power of something
     HALT,
 }
 
@@ -113,19 +114,19 @@ impl CPU {
                 // DEC: 0x9xx
                 (0x9 << 12) | ((*src as u16) << 4)
             }
-            Instruction::PRINT(src) => {
-                (0xA << 12) | ((*src as u16) << 4)
+            Instruction::PRINT(src) => (0xA << 12) | ((*src as u16) << 4), // PRINT: 0xA
+            Instruction::POW(dst, value) => {
+                // POW: 0xBxx
+                (0xB << 12) | ((*dst as u16) << 8) | (*value & 0xFF)
             }
             Instruction::HALT => {
                 // HALT: 0x0000
                 0x0000
-            }
-            /*_ => {
-                // halt
-                0x0000
-            }
-            */
-            
+            } /*_ => {
+                  // halt
+                  0x0000
+              }
+              */
         }
     }
 
@@ -158,7 +159,7 @@ impl CPU {
         let reg1 = ((instruction >> 8) & 0xF) as usize; // first register
         let reg2 = ((instruction >> 4) & 0xF) as usize; // second register
         let value = (instruction & 0xFF) as u16; // value for MOV instruction
-        // match the opcode as hexadecimal values
+                                                 // match the opcode as hexadecimal values
         match opcode {
             0x1 => {
                 // ADD
@@ -216,6 +217,10 @@ impl CPU {
             0xA => {
                 // PRINT the register
                 self.print_register(reg2);
+            }
+            0xB => {
+                // POWER OF, raise first argument to the power of second
+                self.registers[reg1] = u16::pow(self.registers[reg1], value.into());
             }
             _ => {
                 // halt or Invalid opcode
@@ -350,6 +355,10 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             "INC" => Instruction::INC(src_i),
             "HALT" => Instruction::HALT,
             "PRINT" => Instruction::PRINT(src_i),
+            "POW" => Instruction::POW(
+                dest_i,
+                src_i.try_into().expect("Something went wrong with POW"),
+            ),
             _ => {
                 println!("Unknown instruction: {}", instruc);
                 std::process::exit(0);
@@ -361,7 +370,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             if config.debug || config.verbose_debug {
                 println!("Finished parsing code.");
             }
-            break; 
+            break;
         }
         f_contents.replace_range(0..eol + 1, ""); // delete line in string
     }
