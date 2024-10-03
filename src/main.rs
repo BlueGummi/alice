@@ -15,7 +15,7 @@ struct Args {
     file: String,
 }
 
-// Declare config in config.rs
+// declare config in config.rs
 pub fn declare_config() -> Config {
     let config_content = match fs::read_to_string("config.toml") {
         Ok(content) => content,
@@ -57,6 +57,7 @@ struct CPU {
     pc: usize,
     running: bool,
 }
+
 
 impl CPU {
     fn new() -> CPU {
@@ -194,8 +195,7 @@ impl CPU {
                     self.registers[reg1] /= self.registers[reg2];
                 } else {
                     self.running = false;
-                    eprintln!("Nope, can't divide like that\n");
-                    std::process::exit(0);
+                    err_print("Dividing by zero is not allowed.".to_string());
                 }
             }
             0x7 => {
@@ -298,18 +298,18 @@ fn read_file(f_name: String) -> String {
 }
 // we want to format the assembly like this: INSTRUCTION, SOURCE, DESTINATION
 
-/* TODO: Rewrite file parsing logic to prepare for JMP instruction
+/* TODO: Rewrite file parsing logic to prepare for LOOP instruction
     How to do this?
     Create a second clone of f_contents, add line numbers to each line on this
-    When JMP is read, find the line that the JMP instruction is looking for, then make a clone
+    When LOOP is read, find the line that the LOOP instruction is looking for, then make a clone
     of the clone and cutoff the clone's clone's contents so that they start at the line
-    JMP is looking for
+    LOOP is looking for
 
     Then,
     make the f_contents string identical to the clone's clone, without the leading line numbers.
-    if JMP is called again, refer back to the original clone and rinse and repeat :)
+    if LOOP is called again, refer back to the original clone and rinse and repeat :)
 */
-fn parse_file(mut f_contents: String) -> Vec<Instruction> {
+fn parse_file(f_contents: String) -> Vec<Instruction> {
     let mut instructions = Vec::new();
     let config = declare_config();
     let c_contents = append_line_numbers(&f_contents);
@@ -319,9 +319,9 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     }
 
     for line in f_contents.lines().collect::<Vec<&str>>() {
+        // beginning checks, will stop parsing when HALT is found
         if f_contents.is_empty() {
-            eprintln!("Error, provided input file is empty.");
-            std::process::exit(0);
+            err_print("Contents of file are empty.".to_string());
         }
         if f_contents[0..4].contains("HALT") {
             if config.verbose_debug {
@@ -340,6 +340,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         }
         let (src_i, dest_i) = parse_values(src, dest);
         let instruc_slice = &instruc[..];
+        // _i means it is type usize
         let instruction = match instruc_slice {
             "ADD" => Instruction::ADD(dest_i, src_i),
             "SUB" => Instruction::SUB(dest_i, src_i),
@@ -392,6 +393,7 @@ fn find_end_of_line(f_contents: &str) -> usize {
     }
 }
 
+// extracts the data for SRC and DEST, returns them 
 fn extract_components(f_contents: &mut String, eol: usize) -> (String, String, String, usize) {
     let space_loc = f_contents.find(" ").unwrap(); // space_loc is the location of the space
     let (src, dest, comma_loc) = if f_contents[0..eol].contains(",") {
@@ -408,21 +410,33 @@ fn extract_components(f_contents: &mut String, eol: usize) -> (String, String, S
             eol,
         )
     };
-
     let instruc = f_contents[..space_loc].trim().to_string();
     (src, dest, instruc, comma_loc)
 }
 
+
+
+
 fn parse_values(src: String, dest: String) -> (usize, usize) {
     let src_i = if src.contains("b") {
         i32::from_str_radix(&src[2..], 2).expect("Not a binary number!") as usize
-    } else {
+    } else if has_single_letter(&src) { // this will handle single letter registers, RA parses to 0, RB to 1, etc.
+        let src_char: Vec<char> = src.chars().collect();
+        let src = letter_to_integer(*src_char.get(0).unwrap_or(&' '));
+        src.unwrap_or(0) as usize
+    } 
+    
+    else {
         src.parse::<usize>()
             .expect("Failed to convert parsed &str to usize")
     };
 
     let dest_i = if dest.contains("b") {
         i32::from_str_radix(&dest[2..], 2).expect("Not a binary number!") as usize
+    } else if has_single_letter(&dest) {
+        let dest_char: Vec<char> = dest.chars().collect();
+        let dest = letter_to_integer(*dest_char.get(0).unwrap_or(&' '));
+        dest.unwrap_or(0) as usize
     } else {
         dest.parse::<usize>()
             .expect("Failed to convert parsed &str to usize")
@@ -433,7 +447,7 @@ fn parse_values(src: String, dest: String) -> (usize, usize) {
 
 fn debug_print(instruc: &String, src: &String, dest: &String, f_contents: &String) {
     println!(
-        "\nRemaining f_contents:\n{}",
+        "\nRemaining line:\n{}",
         f_contents.trim().color(Colors::YellowFg)
     );
     println!("{}", "FOUND INSTRUCTION".color(Colors::BlueFg));
@@ -504,4 +518,32 @@ fn neg_num_err(instruction: &str) {
         " WILL RESULT IN NEGATIVE NUMBER.\nTERMINATING.".color(Colors::RedFg)
     );
     std::process::exit(0);
+}
+
+fn err_print(error: String) {
+    eprintln!(
+        "{}{}",
+        "ERROR, ".color(Colors::RedFg),
+        error.color(Colors::RedFg)
+    );
+    std::process::exit(0);
+}
+
+fn letter_to_integer(letter: char) -> Option<u8> {
+    // check if the letter is a lowercase or uppercase alphabetic character
+    if letter.is_ascii_lowercase() {
+        // convert lowercase letter to its corresponding integer value
+        Some(letter as u8 - b'a')
+    } else if letter.is_ascii_uppercase() {
+        // convert uppercase letter to its corresponding integer value
+        Some(letter as u8 - b'A')
+    } else {
+        // return None if the letter is not an alphabetic character
+        None
+    }
+}
+
+fn has_single_letter(s: &str) -> bool {
+    // check if the string length is 1 and if the character is a letter
+    s.len() == 1 && s.chars().next().unwrap().is_alphabetic()
 }
