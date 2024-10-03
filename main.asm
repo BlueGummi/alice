@@ -1,1 +1,1 @@
-MOV 5, ra
+MOV 5, rb

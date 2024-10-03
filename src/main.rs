@@ -136,7 +136,7 @@ impl CPU {
         let instruction = self.memory[self.pc];
         self.pc += 1; // add to program counter
         if config.verbose_debug {
-            println!("PC:\n{:?}", self.pc);
+            println!("Program Counter:\n{:?}", self.pc);
         }
         instruction
     }
@@ -150,6 +150,7 @@ impl CPU {
     }
 
     fn print_register(&self, index: usize) {
+        // this is so lazy
         match self.get_register(index) {
             Some(value) => println!("R{}: {}", index, value),
             None => println!("Register index {} is out of bounds.", index),
@@ -347,7 +348,7 @@ fn parse_file(f_contents: String) -> Vec<Instruction> {
             "MUL" => Instruction::MUL(dest_i, src_i),
             "MOV" => Instruction::MOV(
                 dest_i,
-                src_i.try_into().expect("Something went wrong with MOV"),
+                src_i.try_into().expect("MOV instruction parsing error. Line 351."),
             ),
             "SWAP" => Instruction::SWAP(dest_i, src_i),
             "DIV" => Instruction::DIV(dest_i, src_i),
@@ -358,7 +359,7 @@ fn parse_file(f_contents: String) -> Vec<Instruction> {
             "PRINT" => Instruction::PRINT(src_i),
             "POW" => Instruction::POW(
                 dest_i,
-                src_i.try_into().expect("Something went wrong with POW"),
+                src_i.try_into().expect("POW instruction parsing error. Line 362."),
             ),
             _ => {
                 println!("Unknown instruction: {}", instruc);
@@ -418,7 +419,7 @@ fn extract_components(f_contents: &mut String, eol: usize) -> (String, String, S
 
 
 fn parse_values(src: String, dest: String) -> (usize, usize) {
-    let src_i = if src.contains("b") {
+    let src_i = if src.contains("b") && src.chars().any(|c| c.is_digit(10)) {
         i32::from_str_radix(&src[2..], 2).expect("Not a binary number!") as usize
     } else if has_single_letter(&src) { // this will handle single letter registers, RA parses to 0, RB to 1, etc.
         let src_char: Vec<char> = src.chars().collect();
@@ -431,7 +432,7 @@ fn parse_values(src: String, dest: String) -> (usize, usize) {
             .expect("Failed to convert parsed &str to usize")
     };
 
-    let dest_i = if dest.contains("b") {
+    let dest_i = if dest.contains("b") && dest.chars().any(|c| c.is_digit(10)) {
         i32::from_str_radix(&dest[2..], 2).expect("Not a binary number!") as usize
     } else if has_single_letter(&dest) {
         let dest_char: Vec<char> = dest.chars().collect();
