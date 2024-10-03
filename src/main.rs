@@ -36,10 +36,10 @@ pub fn declare_config() -> Config {
 // Add instructions here
 #[derive(Debug)]
 enum Instruction {
-    ADD(usize, usize), // (destination, source)
-    MOV(usize, u16),   // (destination, immediate value)
-    MUL(usize, usize), // (destination, source)
-    SUB(usize, usize), // (destination, source)
+    ADD(usize, usize),  // (destination, source)
+    MOV(usize, u16),    // (destination, immediate value)
+    MUL(usize, usize),  // (destination, source)
+    SUB(usize, usize),  // (destination, source)
     SWAP(usize, usize), // (reg1, reg2)
     DIV(usize, usize),
     CLR(usize), // clear one register
@@ -59,102 +59,120 @@ impl CPU {
         CPU {
             registers: [0; 8],
             memory: [0; MEMORY_SIZE],
-            pc: 0, // default program counter to 0
+            pc: 0,          // default program counter to 0
             running: false, // create new CPU when called
         }
     }
 
-    fn load_program(&mut self, program: &[Instruction]) { // load the program into the memory of the CPU
+    fn load_program(&mut self, program: &[Instruction]) {
+        // load the program into the memory of the CPU
         for (i, instruction) in program.iter().enumerate() {
             self.memory[i] = self.encode_instruction(instruction);
         }
     }
 
-    fn encode_instruction(&self, instruction: &Instruction) -> u16 { // encode instructions to binary
+    fn encode_instruction(&self, instruction: &Instruction) -> u16 {
+        // encode instructions to hex
         match instruction {
             Instruction::ADD(dst, src) => {
-                (0b001 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
+                // ADD: 0x1xx
+                (0x1 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
             }
-            Instruction::MOV(dst, value) => (0b010 << 12) | ((*dst as u16) << 8) | (*value & 0xFF),
+            Instruction::MOV(dst, value) => {
+                // MOV: 0x2xx
+                (0x2 << 12) | ((*dst as u16) << 8) | (*value & 0xFF)
+            }
             Instruction::MUL(dst, src) => {
-                (0b011 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
+                // MUL: 0x3xx
+                (0x3 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
             }
             Instruction::SUB(dst, src) => {
-                (0b100 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
+                // SUB: 0x4xx
+                (0x4 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
             }
             Instruction::SWAP(dst, src) => {
-                (0b101 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
+                // SWAP: 0x5xx
+                (0x5 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
             }
             Instruction::DIV(dst, src) => {
-                (0b110 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
+                // DIV: 0x6xx
+                (0x6 << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
             }
             Instruction::CLR(src) => {
-                (0b111 << 12) | ((*src as u16) << 4)
+                // CLR: 0x7x0
+                (0x7 << 12) | ((*src as u16) << 4)
             }
-            Instruction::HALT => 0x0000, // for MOV, or any values where raw data is taken, do & 0xFF (i think)
+            Instruction::HALT => {
+                // HALT: 0x0000
+                0x0000
+            }
         }
     }
 
     fn fetch_instruction(&mut self) -> u16 {
         let config = declare_config();
         let instruction = self.memory[self.pc];
-        self.pc += 1;// add to program counter
+        self.pc += 1; // add to program counter
         if config.verbose_debug {
             println!("{:?}", self.pc);
         }
-        instruction 
+        instruction
     }
 
     fn execute_instruction(&mut self, instruction: u16) {
-        let opcode = instruction >> 12;
-        let reg1 = ((instruction >> 8) & 0xF) as usize;
-        let reg2 = ((instruction >> 4) & 0xF) as usize;
-        let value = (instruction & 0xFF) as u16;
-        // add what the opcode does, reg1 is the second argument, reg2 is the first
+        let opcode = instruction >> 12; // extract the opcode
+        let reg1 = ((instruction >> 8) & 0xF) as usize; // first register
+        let reg2 = ((instruction >> 4) & 0xF) as usize; // second register
+        let value = (instruction & 0xFF) as u16; // value for MOV instruction
+
+        // match the opcode as hexadecimal values
         match opcode {
-            0b001 => {
+            0x1 => {
                 // ADD
                 self.registers[reg1] += self.registers[reg2];
             }
-            0b010 => {
+            0x2 => {
                 // MOV
                 self.registers[reg1] = value;
             }
-            0b011 => {
+            0x3 => {
                 // MUL
                 self.registers[reg1] *= self.registers[reg2];
             }
-            0b100 => {
+            0x4 => {
                 // SUB
                 self.registers[reg1] -= self.registers[reg2];
             }
-            0b101 => {
+            0x5 => {
                 // SWAP
                 let temp = self.registers[reg1];
                 self.registers[reg1] = self.registers[reg2];
                 self.registers[reg2] = temp;
             }
-            0b110 => {
+            0x6 => {
                 // DIVIDE (DIV)
-                if self.registers[reg1] != 0 {
-                    self.registers[reg2] /= self.registers[reg1];
+                if self.registers[reg2] != 0 {
+                    // Check reg2 to avoid division by zero
+                    self.registers[reg1] /= self.registers[reg2];
                 } else {
                     self.running = false;
                     eprintln!("Nope, can't divide like that\n");
                     std::process::exit(0);
                 }
             }
-            0b111 => {
-                self.registers[reg1] = 0; //clear
+            0x7 => {
+                // CLR
+                self.registers[reg1] = 0; // clear register
             }
             _ => {
-                // Halt or Invalid opcode
+                // halt or Invalid opcode
                 self.running = false;
             }
         }
     }
 
-    fn run(&mut self) { // run the CPU and use the previous functions
+    fn run(&mut self) {
+        // run the CPU and use the previous functions
         self.running = true;
         while self.running {
             let instruction = self.fetch_instruction();
@@ -224,10 +242,6 @@ fn read_file(f_name: String) -> String {
 }
 // we want to format the assembly like this: INSTRUCTION, SOURCE, DESTINATION
 
-
-
-
-
 /* TODO: Rewrite file parsing logic to prepare for JMP instruction
     How to do this?
     Create a second clone of f_contents, add line numbers to each line on this
@@ -253,8 +267,8 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         println!("File contents with line numbers:\n{}", c_contents);
     }
     loop {
-        if f_contents.is_empty(){
-            eprintln!("Error, provided input file is empty."); 
+        if f_contents.is_empty() {
+            eprintln!("Error, provided input file is empty.");
             std::process::exit(0);
         }
         if f_contents[0..4].contains("HALT") {
@@ -272,7 +286,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         } else {
             eol = f_contents.len(); // if no newline
         }
-        src = delete_first_letter(f_contents[space_loc..comma_loc].trim());  // src will find the first value
+        src = delete_first_letter(f_contents[space_loc..comma_loc].trim()); // src will find the first value
         dest = delete_first_letter(f_contents[comma_loc + 1..eol].trim());
         instruc = f_contents[..space_loc].trim();
         if config.verbose_debug {
@@ -284,7 +298,10 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             print!("{}\n", src.color(Colors::BrightMagentaFg));
             print!("{}", "DEST:".color(Colors::RedFg));
             print!("{}\n", dest.color(Colors::BrightMagentaFg));
-            println!("Remaining f_contents:\n{}\n", f_contents.color(Colors::YellowFg));
+            println!(
+                "Remaining f_contents:\n{}\n",
+                f_contents.color(Colors::YellowFg)
+            );
         }
         // variables suffixed with _i are of type usize
         let dest_i = dest
@@ -331,8 +348,6 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     }
     instructions
 }
-
-
 
 // functions here aren't mission critical, moreso "helper" little functions to get small jobs done :)
 
