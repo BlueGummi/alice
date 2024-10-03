@@ -152,7 +152,7 @@ impl CPU {
             0x6 => {
                 // DIVIDE (DIV)
                 if self.registers[reg2] != 0 {
-                    // Check reg2 to avoid division by zero
+                    // check reg2 to avoid division by zero
                     self.registers[reg1] /= self.registers[reg2];
                 } else {
                     self.running = false;
@@ -208,13 +208,9 @@ fn main() {
         "\nR0: {}",
         cpu.registers[0].to_string().color(Colors::CyanFg)
     );
-    println!("R1: {}", cpu.registers[1].to_string().color(Colors::CyanFg));
-    println!("R2: {}", cpu.registers[2].to_string().color(Colors::CyanFg));
-    println!("R3: {}", cpu.registers[3].to_string().color(Colors::CyanFg));
-    println!("R4: {}", cpu.registers[4].to_string().color(Colors::CyanFg));
-    println!("R5: {}", cpu.registers[5].to_string().color(Colors::CyanFg));
-    println!("R6: {}", cpu.registers[6].to_string().color(Colors::CyanFg));
-    println!("R7: {}", cpu.registers[7].to_string().color(Colors::CyanFg)); //this code is written like this as i can see where i am in the program with ugly code
+    for i in 1..=7 {
+        println!("R{}: {}", i, cpu.registers[i].to_string().color(Colors::CyanFg)); //register printing
+    }
     if config.debug || config.verbose_debug {
         println!(
             "{}\n{}\n",
