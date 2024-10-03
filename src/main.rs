@@ -178,7 +178,9 @@ fn main() {
         parse_file()
     ];
     */
-    let program = parse_file(read_file("main.asm".to_string()));
+    let args = Args::parse();
+
+    let program = parse_file(read_file(args.file.to_string()));
     if config.verbose_debug {
         println!("{:?}", program);
     }
@@ -199,7 +201,7 @@ fn main() {
         println!(
             "{}\n{}\n",
             "\nFILE CONTENTS".color(Colors::WhiteFg),
-            read_file("main.asm".to_string()).color(Colors::GreenFg)
+            read_file(args.file.to_string()).color(Colors::GreenFg)
         );
     }
 }
