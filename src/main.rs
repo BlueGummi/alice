@@ -342,7 +342,7 @@ fn parse_file(f_contents: String) -> Vec<Instruction> {
         let (src_i, dest_i) = parse_values(src, dest);
         let instruc_slice = &instruc[..];
         // _i means it is type usize
-        let instruction = match instruc_slice {
+        let instruction = match instruc_slice.to_uppercase().as_str() {
             "ADD" => Instruction::ADD(dest_i, src_i),
             "SUB" => Instruction::SUB(dest_i, src_i),
             "MUL" => Instruction::MUL(dest_i, src_i),
@@ -419,7 +419,7 @@ fn extract_components(f_contents: &mut String, eol: usize) -> (String, String, S
 
 
 fn parse_values(src: String, dest: String) -> (usize, usize) {
-    let src_i = if src.contains("b") && src.chars().any(|c| c.is_digit(10)) {
+    let src_i = if src.contains("b") && src.chars().any(|c| c.is_digit(10)) /* this here to check for RB*/ {
         i32::from_str_radix(&src[2..], 2).expect("Not a binary number!") as usize
     } else if has_single_letter(&src) { // this will handle single letter registers, RA parses to 0, RB to 1, etc.
         let src_char: Vec<char> = src.chars().collect();
@@ -432,7 +432,7 @@ fn parse_values(src: String, dest: String) -> (usize, usize) {
             .expect("Failed to convert parsed &str to usize")
     };
 
-    let dest_i = if dest.contains("b") && dest.chars().any(|c| c.is_digit(10)) {
+    let dest_i = if dest.contains("b") && dest.chars().any(|c| c.is_digit(10)) /* this here to check for RB*/ {
         i32::from_str_radix(&dest[2..], 2).expect("Not a binary number!") as usize
     } else if has_single_letter(&dest) {
         let dest_char: Vec<char> = dest.chars().collect();
