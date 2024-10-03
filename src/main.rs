@@ -235,7 +235,11 @@ fn main() {
         cpu.registers[0].to_string().color(Colors::CyanFg)
     );
     for i in 1..=7 {
-        println!("R{}: {}", i, cpu.registers[i].to_string().color(Colors::CyanFg)); //register printing
+        println!(
+            "R{}: {}",
+            i,
+            cpu.registers[i].to_string().color(Colors::CyanFg)
+        ); //register printing
     }
     if config.debug || config.verbose_debug {
         println!(
@@ -278,16 +282,12 @@ fn read_file(f_name: String) -> String {
 fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     let mut instructions = Vec::new();
     let config = declare_config();
-    let mut comma_loc;
-    let mut space_loc;
-    let mut src;
-    let mut eol;
-    let mut dest;
-    let mut instruc;
     let c_contents = append_line_numbers(&f_contents);
+
     if config.verbose_debug {
         println!("File contents with line numbers:\n{}", c_contents);
     }
+
     loop {
         if f_contents.is_empty() {
             eprintln!("Error, provided input file is empty.");
@@ -299,75 +299,40 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             }
             break;
         }
+
         remove_comments(&mut f_contents);
 
-        if f_contents.contains("\n") {
-            eol = f_contents.find("\n").unwrap(); // if newline found
-        } else {
-            eol = f_contents.len(); // if no newline
-        }
-        space_loc = f_contents.find(" ").unwrap(); // space_loc is the location of the space
-        if f_contents[0..eol].contains(","){
-            comma_loc = f_contents.find(",").unwrap(); // comma_loc is the location of the comma in assembly
-            src = delete_first_letter(f_contents[space_loc..comma_loc].trim()); // src will find the first value
-            dest = delete_first_letter(f_contents[comma_loc + 1..eol].trim());
-        } else {
-            src = delete_first_letter(f_contents[space_loc..eol].trim());
-            dest = "0";
-            comma_loc = eol;
-            println!("src {:?}", src);
-        }
+        let eol = find_end_of_line(&f_contents);
+        let (src, dest, instruc, comma_loc) = extract_components(&mut f_contents, eol);
 
-        instruc = f_contents[..space_loc].trim();
         if config.verbose_debug {
-            // colorful stuff to print
-            print!("{}\n", "FOUND INSTRUCTION".color(Colors::BlueFg));
-            print!("{}", "INSTRUCTION:".color(Colors::RedFg));
-            print!("{}\n", instruc.color(Colors::BrightMagentaFg));
-            print!("{}", "SRC:".color(Colors::RedFg));
-            print!("{}\n", src.color(Colors::BrightMagentaFg));
-            print!("{}", "DEST:".color(Colors::RedFg));
-            print!("{}\n", dest.color(Colors::BrightMagentaFg));
-            println!(
-                "Remaining f_contents:\n{}\n",
-                f_contents.color(Colors::YellowFg)
-            );
+            debug_print(&instruc, &src, &dest, &f_contents);
         }
-        // variables suffixed with _i are of type usize
-        let dest_i = dest
-            .parse::<usize>()
-            .expect("Failed to convert parsed &str to usize");
-        let src_i = src
-            .parse::<usize>()
-            .expect("Failed to convert parsed &str to usize");
-        // attempt to convert usize to u16
-        let src_u16: Result<u16, _> = src_i.try_into();
 
-        // check the result and assign to a variable
-        match src_u16 {
-            Ok(_v) => {}
-            Err(_) => {
-                println!("Value is too large to fit in a u16!");
-            }
-        }
-        let instruction = match instruc {
+        let (src_i, dest_i) = parse_values(src, dest);
+        let instruc_slice = &instruc[..];
+        let instruction = match instruc_slice {
             "ADD" => Instruction::ADD(dest_i, src_i),
             "SUB" => Instruction::SUB(dest_i, src_i),
             "MUL" => Instruction::MUL(dest_i, src_i),
-            "MOV" => Instruction::MOV(dest_i, src_u16.expect("Something went wrong with MOV")),
+            "MOV" => Instruction::MOV(
+                dest_i,
+                src_i.try_into().expect("Something went wrong with MOV"),
+            ),
             "SWAP" => Instruction::SWAP(dest_i, src_i),
             "DIV" => Instruction::DIV(dest_i, src_i),
             "CLR" => Instruction::CLR(src_i),
             "DEC" => Instruction::DEC(src_i),
             "INC" => Instruction::INC(src_i),
             "HALT" => Instruction::HALT,
-            // add more instruction matches as needed
             _ => {
                 println!("Unknown instruction: {}", instruc);
-                std::process::exit(0); // Skip unknown instructions
+                std::process::exit(0);
             }
         };
+
         instructions.push(instruction);
+
         if !f_contents.trim().contains("\n") {
             println!("Finished parsing code.");
             break; // push one instruction to the instruction vector to execute
@@ -375,11 +340,75 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
 
         f_contents.replace_range(0..eol + 1, ""); // delete line in string
     }
+
     instructions.push(Instruction::HALT);
+
     if config.verbose_debug {
         println!("{:?}", instructions);
     }
+
     instructions
+}
+
+fn find_end_of_line(f_contents: &str) -> usize {
+    if f_contents.contains("\n") {
+        f_contents.find("\n").unwrap() // if newline found
+    } else {
+        f_contents.len() // if no newline
+    }
+}
+
+fn extract_components(f_contents: &mut String, eol: usize) -> (String, String, String, usize) {
+    let space_loc = f_contents.find(" ").unwrap(); // space_loc is the location of the space
+    let (src, dest, comma_loc) = if f_contents[0..eol].contains(",") {
+        let comma_loc = f_contents.find(",").unwrap(); // comma_loc is the location of the comma in assembly
+        (
+            delete_first_letter(f_contents[space_loc..comma_loc].trim()).to_string(),
+            delete_first_letter(f_contents[comma_loc + 1..eol].trim()).to_string(),
+            comma_loc,
+        )
+    } else {
+        (
+            delete_first_letter(f_contents[space_loc..eol].trim()).to_string(),
+            "0".to_string(),
+            eol,
+        )
+    };
+
+    let instruc = f_contents[..space_loc].trim().to_string();
+    (src, dest, instruc, comma_loc)
+}
+
+fn parse_values(src: String, dest: String) -> (usize, usize) {
+    let src_i = if src.contains("b") {
+        i32::from_str_radix(&src[2..], 2).expect("Not a binary number!") as usize
+    } else {
+        src.parse::<usize>()
+            .expect("Failed to convert parsed &str to usize")
+    };
+
+    let dest_i = if dest.contains("b") {
+        i32::from_str_radix(&dest[2..], 2).expect("Not a binary number!") as usize
+    } else {
+        dest.parse::<usize>()
+            .expect("Failed to convert parsed &str to usize")
+    };
+
+    (src_i, dest_i)
+}
+
+fn debug_print(instruc: &String, src: &String, dest: &String, f_contents: &String) {
+    println!("{}\n", "FOUND INSTRUCTION".color(Colors::BlueFg));
+    print!("{}", "INSTRUCTION:".color(Colors::RedFg));
+    print!("{}\n", instruc.color(Colors::BrightMagentaFg));
+    print!("{}", "SRC:".color(Colors::RedFg));
+    print!("{}\n", src.color(Colors::BrightMagentaFg));
+    print!("{}", "DEST:".color(Colors::RedFg));
+    print!("{}\n", dest.color(Colors::BrightMagentaFg));
+    println!(
+        "Remaining f_contents:\n{}\n",
+        f_contents.color(Colors::YellowFg)
+    );
 }
 
 // functions here aren't mission critical, moreso "helper" little functions to get small jobs done :)
@@ -433,7 +462,11 @@ fn append_line_numbers(input: &str) -> String {
 }
 
 fn neg_num_err(instruction: &str) {
-    eprintln!("{}{}{}", "ERROR, ".color(Colors::RedFg), instruction.color(Colors::YellowFg), 
-    " WILL RESULT IN NEGATIVE NUMBER.\nTERMINATING.".color(Colors::RedFg));
+    eprintln!(
+        "{}{}{}",
+        "ERROR, ".color(Colors::RedFg),
+        instruction.color(Colors::YellowFg),
+        " WILL RESULT IN NEGATIVE NUMBER.\nTERMINATING.".color(Colors::RedFg)
+    );
     std::process::exit(0);
 }

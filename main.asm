@@ -5,6 +5,5 @@ MOV 8, r3
 MOV 16, r4
 DIV r4, r3
 MOV 50, r3
-SUB r3, r4
 MOV 4, r7
-MOV 5, r6
+MOV 0b1001, r6
