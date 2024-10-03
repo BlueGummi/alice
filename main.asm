@@ -7,3 +7,4 @@ DIV r4, r3
 HALT
 MOV 4, r7
 MOV 5, r6
+CLR r4

@@ -27,6 +27,7 @@ pub fn declare_config() -> Config {
     match toml::de::from_str::<Config>(&config_content) {
         Ok(config) => config,
         Err(_) => {
+            println!("config.toml parsing failed. defaulting.");
             Config::default() // return default config if parsing fails
         }
     }
@@ -98,7 +99,7 @@ impl CPU {
         let config = declare_config();
         let instruction = self.memory[self.pc];
         self.pc += 1;// add to program counter
-        if config.debug {
+        if config.verbose_debug {
             println!("{:?}", self.pc);
         }
         instruction 
@@ -178,13 +179,13 @@ fn main() {
     ];
     */
     let program = parse_file(read_file("main.asm".to_string()));
-    if config.debug {
+    if config.verbose_debug {
         println!("{:?}", program);
     }
     cpu.load_program(&program);
     cpu.run();
     println!(
-        "\n\n\n\nR0: {}",
+        "\nR0: {}",
         cpu.registers[0].to_string().color(Colors::CyanFg)
     );
     println!("R1: {}", cpu.registers[1].to_string().color(Colors::CyanFg));
@@ -194,7 +195,7 @@ fn main() {
     println!("R5: {}", cpu.registers[5].to_string().color(Colors::CyanFg));
     println!("R6: {}", cpu.registers[6].to_string().color(Colors::CyanFg));
     println!("R7: {}", cpu.registers[7].to_string().color(Colors::CyanFg)); //this code is written like this as i can see where i am in the program with ugly code
-    if config.debug {
+    if config.debug || config.verbose_debug {
         println!(
             "{}\n{}\n",
             "\nFILE CONTENTS".color(Colors::WhiteFg),
@@ -246,7 +247,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
     let mut dest;
     let mut instruc;
     let mut c_contents = append_line_numbers(&f_contents);
-    if config.debug {
+    if config.verbose_debug {
         println!("File contents with line numbers:\n{}", c_contents);
     }
     loop {
@@ -255,7 +256,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             std::process::exit(0);
         }
         if f_contents[0..4].contains("HALT") {
-            if config.debug {
+            if config.verbose_debug {
                 println!("HALT detected. Parsing complete.");
             }
             break;
@@ -272,7 +273,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         src = delete_first_letter(f_contents[space_loc..comma_loc].trim());  // src will find the first value
         dest = delete_first_letter(f_contents[comma_loc + 1..eol].trim());
         instruc = f_contents[..space_loc].trim();
-        if config.debug {
+        if config.verbose_debug {
             /// colorful stuff to print, debug
             print!("{}\n", "FOUND INSTRUCTION".color(Colors::BlueFg));
             print!("{}", "INSTRUCTION:".color(Colors::RedFg));
@@ -323,7 +324,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         f_contents.replace_range(0..eol + 1, ""); // delete line in string
     }
     instructions.push(Instruction::HALT);
-    if config.debug {
+    if config.verbose_debug {
         println!("{:?}", instructions);
     }
     instructions
