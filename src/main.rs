@@ -318,7 +318,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         println!("File contents with line numbers:\n{}", c_contents);
     }
 
-    loop {
+    for line in f_contents.lines().collect::<Vec<&str>>() {
         if f_contents.is_empty() {
             eprintln!("Error, provided input file is empty.");
             std::process::exit(0);
@@ -330,13 +330,13 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             break;
         }
 
-        remove_comments(&mut f_contents);
+        remove_comments(&mut line.to_string());
 
-        let eol = find_end_of_line(&f_contents);
-        let (src, dest, instruc, _comma_loc) = extract_components(&mut f_contents, eol);
+        let eol = find_end_of_line(&line);
+        let (src, dest, instruc, _comma_loc) = extract_components(&mut line.to_string(), eol);
 
         if config.verbose_debug {
-            debug_print(&instruc, &src, &dest, &f_contents);
+            debug_print(&instruc, &src, &dest, &line.to_string());
         }
         let (src_i, dest_i) = parse_values(src, dest);
         let instruc_slice = &instruc[..];
@@ -372,7 +372,7 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             }
             break;
         }
-        f_contents.replace_range(0..eol + 1, ""); // delete line in string
+        // f_contents.replace_range(0..eol + 1, ""); // delete line in string
     }
 
     instructions.push(Instruction::HALT);

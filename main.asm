@@ -1,4 +1,4 @@
-MOV 5, r3
+MOV 0b0101, r3
 MOV 5, r2
 ADD r3, r2
 POW r2, 2
