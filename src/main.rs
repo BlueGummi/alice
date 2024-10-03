@@ -45,6 +45,7 @@ enum Instruction {
     CLR(usize), // clear one register
     INC(usize),
     DEC(usize),
+    PRINT(usize), // print a register to the console
     HALT,
 }
 
@@ -112,10 +113,19 @@ impl CPU {
                 // DEC: 0x9xx
                 (0x9 << 12) | ((*src as u16) << 4)
             }
+            Instruction::PRINT(src) => {
+                (0xA << 12) | ((*src as u16) << 4)
+            }
             Instruction::HALT => {
                 // HALT: 0x0000
                 0x0000
             }
+            /*_ => {
+                // halt
+                0x0000
+            }
+            */
+            
         }
     }
 
@@ -124,17 +134,30 @@ impl CPU {
         let instruction = self.memory[self.pc];
         self.pc += 1; // add to program counter
         if config.verbose_debug {
-            println!("{:?}", self.pc);
+            println!("PC:\n{:?}", self.pc);
         }
         instruction
     }
 
+    fn get_register(&self, index: usize) -> Option<u16> {
+        if index < self.registers.len() {
+            Some(self.registers[index])
+        } else {
+            None // return None if index is out of bounds
+        }
+    }
+
+    fn print_register(&self, index: usize) {
+        match self.get_register(index) {
+            Some(value) => println!("R{}: {}", index, value),
+            None => println!("Register index {} is out of bounds.", index),
+        }
+    }
     fn execute_instruction(&mut self, instruction: u16) {
         let opcode = instruction >> 12; // extract the opcode
         let reg1 = ((instruction >> 8) & 0xF) as usize; // first register
         let reg2 = ((instruction >> 4) & 0xF) as usize; // second register
         let value = (instruction & 0xFF) as u16; // value for MOV instruction
-
         // match the opcode as hexadecimal values
         match opcode {
             0x1 => {
@@ -190,6 +213,10 @@ impl CPU {
                     neg_num_err("SUB");
                 }
             }
+            0xA => {
+                // PRINT the register
+                self.print_register(reg2);
+            }
             _ => {
                 // halt or Invalid opcode
                 self.running = false;
@@ -230,16 +257,14 @@ fn main() {
     }
     cpu.load_program(&program);
     cpu.run();
-    println!(
-        "\nR0: {}",
-        cpu.registers[0].to_string().color(Colors::CyanFg)
-    );
-    for i in 1..=7 {
-        println!(
-            "R{}: {}",
-            i,
-            cpu.registers[i].to_string().color(Colors::CyanFg)
-        ); //register printing
+    if config.debug || config.verbose_debug {
+        for i in 0..=cpu.registers.len() - 1 {
+            println!(
+                "R{}: {}",
+                i,
+                cpu.registers[i].to_string().color(Colors::CyanFg)
+            ); // print out registers
+        }
     }
     if config.debug || config.verbose_debug {
         println!(
@@ -303,12 +328,11 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
         remove_comments(&mut f_contents);
 
         let eol = find_end_of_line(&f_contents);
-        let (src, dest, instruc, comma_loc) = extract_components(&mut f_contents, eol);
+        let (src, dest, instruc, _comma_loc) = extract_components(&mut f_contents, eol);
 
         if config.verbose_debug {
             debug_print(&instruc, &src, &dest, &f_contents);
         }
-
         let (src_i, dest_i) = parse_values(src, dest);
         let instruc_slice = &instruc[..];
         let instruction = match instruc_slice {
@@ -325,19 +349,20 @@ fn parse_file(mut f_contents: String) -> Vec<Instruction> {
             "DEC" => Instruction::DEC(src_i),
             "INC" => Instruction::INC(src_i),
             "HALT" => Instruction::HALT,
+            "PRINT" => Instruction::PRINT(src_i),
             _ => {
                 println!("Unknown instruction: {}", instruc);
                 std::process::exit(0);
             }
         };
-
-        instructions.push(instruction);
+        instructions.push(instruction); // push one instruction to the instruction vector to execute
 
         if !f_contents.trim().contains("\n") {
-            println!("Finished parsing code.");
-            break; // push one instruction to the instruction vector to execute
+            if config.debug || config.verbose_debug {
+                println!("Finished parsing code.");
+            }
+            break; 
         }
-
         f_contents.replace_range(0..eol + 1, ""); // delete line in string
     }
 
@@ -398,17 +423,17 @@ fn parse_values(src: String, dest: String) -> (usize, usize) {
 }
 
 fn debug_print(instruc: &String, src: &String, dest: &String, f_contents: &String) {
-    println!("{}\n", "FOUND INSTRUCTION".color(Colors::BlueFg));
+    println!(
+        "\nRemaining f_contents:\n{}",
+        f_contents.trim().color(Colors::YellowFg)
+    );
+    println!("{}", "FOUND INSTRUCTION".color(Colors::BlueFg));
     print!("{}", "INSTRUCTION:".color(Colors::RedFg));
     print!("{}\n", instruc.color(Colors::BrightMagentaFg));
     print!("{}", "SRC:".color(Colors::RedFg));
     print!("{}\n", src.color(Colors::BrightMagentaFg));
     print!("{}", "DEST:".color(Colors::RedFg));
-    print!("{}\n", dest.color(Colors::BrightMagentaFg));
-    println!(
-        "Remaining f_contents:\n{}\n",
-        f_contents.color(Colors::YellowFg)
-    );
+    print!("{}\n\n", dest.color(Colors::BrightMagentaFg));
 }
 
 // functions here aren't mission critical, moreso "helper" little functions to get small jobs done :)
@@ -418,10 +443,11 @@ fn path_exists(path: &str) -> bool {
 }
 
 // this is here for debug, please ignore :)
+/*
 fn print_type<T>(_: &T) {
     println!("{:?}", std::any::type_name::<T>());
 }
-
+*/
 fn remove_comments(f_contents: &mut String) {
     let mut result = String::new();
     let lines: Vec<&str> = f_contents.lines().collect();
