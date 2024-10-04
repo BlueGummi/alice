@@ -47,6 +47,7 @@ enum Instruction {
     DEC(usize),
     PRINT(usize),    // print a register to the console
     POW(usize, u16), // raise a value in a register to the power of something
+    MOVR(usize, usize),
     HALT,
 }
 
@@ -119,6 +120,10 @@ impl CPU {
             Instruction::POW(dst, value) => {
                 // POW: 0xBxx
                 (0xB << 12) | ((*dst as u16) << 8) | (*value & 0xFF)
+            }
+            Instruction::MOVR(dst, src) => {
+                // MOVR: 0xC
+                (0xC << 12) | ((*dst as u16) << 8) | ((*src as u16) << 4)
             }
             Instruction::HALT => {
                 // HALT: 0x0000
@@ -223,6 +228,10 @@ impl CPU {
                 // POWER OF, raise first argument to the power of second
                 self.registers[reg1] = u16::pow(self.registers[reg1], value.into());
             }
+            0xC => {
+                // MOVR, mov src into dest
+                self.registers[reg1] = self.registers[reg2];
+            }
             _ => {
                 // halt or Invalid opcode
                 self.running = false;
@@ -297,7 +306,7 @@ fn read_file(f_name: String) -> String {
     };
     contents
 }
-// we want to format the assembly like this: INSTRUCTION, SOURCE, DESTINATION
+// we want to format the assembly like this: INSTRUCTION, DESTINATION, SOURCE
 
 /* TODO: Rewrite file parsing logic to prepare for LOOP instruction
     How to do this?
@@ -360,6 +369,7 @@ fn parse_file(f_contents: String) -> Vec<Instruction> {
                 dest_i,
                 src_i.try_into().expect("POW instruction parsing error. Line 362."),
             ),
+            "MOVR" => Instruction::MOVR(dest_i, src_i),
             _ => {
                 println!("Unknown instruction: {}", instruc);
                 std::process::exit(0);
