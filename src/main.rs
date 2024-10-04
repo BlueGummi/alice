@@ -152,7 +152,7 @@ impl CPU {
     fn print_register(&self, index: usize) {
         // this is so lazy
         match self.get_register(index) {
-            Some(value) => println!("R{}: {}", index, value),
+            Some(value) => println!("{}x: {}", integer_to_letter(index), value),
             None => println!("Register index {} is out of bounds.", index),
         }
     }
@@ -201,16 +201,16 @@ impl CPU {
             }
             0x7 => {
                 // CLR
-                self.registers[reg1] = 0; // clear register
+                self.registers[reg2] = 0; // clear register
             }
             0x8 => {
                 // INC
-                self.registers[reg1] += 1; // add one to register provided
+                self.registers[reg2] += 1; // add one to register provided
             }
             0x9 => {
                 // DEC
-                if self.registers[reg1] >= 1 {
-                    self.registers[reg1] -= 1;
+                if self.registers[reg2] >= 1 {
+                    self.registers[reg2] -= 1;
                 } else {
                     neg_num_err("SUB");
                 }
@@ -331,15 +331,14 @@ fn parse_file(f_contents: String) -> Vec<Instruction> {
             break;
         }
 
-        remove_comments(&mut line.to_string());
-
+        let line = &remove_comments(&mut line.to_string());
+        
         let eol = find_end_of_line(&line);
         let (src, dest, instruc, _comma_loc) = extract_components(&mut line.to_string(), eol);
-
         if config.verbose_debug {
             debug_print(&instruc, &src, &dest, &line.to_string());
         }
-        let (src_i, dest_i) = parse_values(src, dest);
+        let (dest_i, src_i) = parse_values(src, dest);
         let instruc_slice = &instruc[..];
         // _i means it is type usize
         let instruction = match instruc_slice.to_uppercase().as_str() {
@@ -352,11 +351,11 @@ fn parse_file(f_contents: String) -> Vec<Instruction> {
             ),
             "SWAP" => Instruction::SWAP(dest_i, src_i),
             "DIV" => Instruction::DIV(dest_i, src_i),
-            "CLR" => Instruction::CLR(src_i),
-            "DEC" => Instruction::DEC(src_i),
-            "INC" => Instruction::INC(src_i),
+            "CLR" => Instruction::CLR(dest_i),
+            "DEC" => Instruction::DEC(dest_i),
+            "INC" => Instruction::INC(dest_i),
             "HALT" => Instruction::HALT,
-            "PRINT" => Instruction::PRINT(src_i),
+            "PRINT" => Instruction::PRINT(dest_i),
             "POW" => Instruction::POW(
                 dest_i,
                 src_i.try_into().expect("POW instruction parsing error. Line 362."),
@@ -400,13 +399,13 @@ fn extract_components(f_contents: &mut String, eol: usize) -> (String, String, S
     let (src, dest, comma_loc) = if f_contents[0..eol].contains(",") {
         let comma_loc = f_contents.find(",").unwrap(); // comma_loc is the location of the comma in assembly
         (
-            delete_first_letter(f_contents[space_loc..comma_loc].trim()).to_string(),
-            delete_first_letter(f_contents[comma_loc + 1..eol].trim()).to_string(),
+            delete_last_letter(f_contents[space_loc..comma_loc].trim()).to_string(),
+            delete_last_letter(f_contents[comma_loc + 1..eol].trim()).to_string(),
             comma_loc,
         )
     } else {
         (
-            delete_first_letter(f_contents[space_loc..eol].trim()).to_string(),
+            delete_last_letter(f_contents[space_loc..eol].trim()).to_string(),
             "0".to_string(),
             eol,
         )
@@ -419,7 +418,7 @@ fn extract_components(f_contents: &mut String, eol: usize) -> (String, String, S
 
 
 fn parse_values(src: String, dest: String) -> (usize, usize) {
-    let src_i = if src.contains("b") && src.chars().any(|c| c.is_digit(10)) /* this here to check for RB*/ {
+    let src_i = if src.contains("b") && has_b_with_num(&src) /* this here to check for BX*/ {
         i32::from_str_radix(&src[2..], 2).expect("Not a binary number!") as usize
     } else if has_single_letter(&src) { // this will handle single letter registers, RA parses to 0, RB to 1, etc.
         let src_char: Vec<char> = src.chars().collect();
@@ -432,7 +431,7 @@ fn parse_values(src: String, dest: String) -> (usize, usize) {
             .expect("Failed to convert parsed &str to usize")
     };
 
-    let dest_i = if dest.contains("b") && dest.chars().any(|c| c.is_digit(10)) /* this here to check for RB*/ {
+    let dest_i = if dest.contains("b") && has_b_with_num(&dest)  /* this here to check for BX*/ {
         i32::from_str_radix(&dest[2..], 2).expect("Not a binary number!") as usize
     } else if has_single_letter(&dest) {
         let dest_char: Vec<char> = dest.chars().collect();
@@ -453,11 +452,11 @@ fn debug_print(instruc: &String, src: &String, dest: &String, f_contents: &Strin
     );
     println!("{}", "FOUND INSTRUCTION".color(Colors::BlueFg));
     print!("{}", "INSTRUCTION:".color(Colors::RedFg));
-    print!("{}\n", instruc.color(Colors::BrightMagentaFg));
+    print!("{}\n", instruc.to_uppercase().color(Colors::BrightMagentaFg));
     print!("{}", "SRC:".color(Colors::RedFg));
-    print!("{}\n", src.color(Colors::BrightMagentaFg));
+    print!("{}\n", dest.color(Colors::BrightMagentaFg));
     print!("{}", "DEST:".color(Colors::RedFg));
-    print!("{}\n\n", dest.color(Colors::BrightMagentaFg));
+    print!("{}\n\n", src.color(Colors::BrightMagentaFg));
 }
 
 // functions here aren't mission critical, moreso "helper" little functions to get small jobs done :)
@@ -472,11 +471,10 @@ fn print_type<T>(_: &T) {
     println!("{:?}", std::any::type_name::<T>());
 }
 */
-fn remove_comments(f_contents: &mut String) {
+fn remove_comments(f_contents: &mut String) -> String {
     let mut result = String::new();
-    let lines: Vec<&str> = f_contents.lines().collect();
 
-    for line in lines {
+    for line in f_contents.lines() {
         if let Some(comment_loc) = line.find(';') {
             // append the part of the line before the comment
             result.push_str(&line[..comment_loc]);
@@ -488,18 +486,19 @@ fn remove_comments(f_contents: &mut String) {
     }
 
     // update the original string with the new string without comments
-    *f_contents = result;
+    *f_contents = result.trim_end().to_string(); // trim the last newline if present
+    return result.trim_end().to_string();
 }
 
-fn delete_first_letter(s: &str) -> &str {
+fn delete_last_letter(s: &str) -> &str {
     if !s.is_empty() {
-        // check if the first character is a letter
-        let first_char = s.chars().next().unwrap();
-        if first_char.is_alphabetic() {
-            return &s[1..]; // return a slice starting from the second character
+        // check if the last character is a letter
+        let last_char = s.chars().last().unwrap();
+        if last_char.is_alphabetic() {
+            return &s[..s.len() - 1]; // return a slice excluding the last character
         }
     }
-    s // return the original string if it's empty or the first character is not a letter
+    s // return the original string if it's empty or the last character is not a letter
 }
 
 fn append_line_numbers(input: &str) -> String {
@@ -544,7 +543,42 @@ fn letter_to_integer(letter: char) -> Option<u8> {
     }
 }
 
+fn integer_to_letter(n: usize) -> char {
+    // check if the integer is within the range of 0-25
+    if n < 26 {
+        // convert the integer to a letter (0 -> 'A', 1 -> 'B', ..., 25 -> 'Z')
+        (n as u8 + b'a') as char
+    } else {
+        err_print("value passed to integer_to_letter while printing register was too large.".to_string());
+        std::process::exit(0);
+    }
+}
+
+
 fn has_single_letter(s: &str) -> bool {
     // check if the string length is 1 and if the character is a letter
     s.len() == 1 && s.chars().next().unwrap().is_alphabetic()
+}
+// yes i wrote a whole function to check if the letter b is followed by a number, no you 
+// will not do anything about it
+fn has_b_with_num(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    let mut found_b = false;
+
+    for &byte in bytes {
+        if found_b {
+            // check if the current character is a digit
+            if byte.is_ascii_digit() {
+                return true;
+            } else {
+                found_b = false; // reset if not a digit
+            }
+        }
+        // check if the current character is 'b'
+        if byte == b'b' || byte == b'B' {
+            found_b = true;
+        }
+    }
+
+    false // return false if no 'b' followed by a digit was found
 }

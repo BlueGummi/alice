@@ -1,7 +1,4 @@
-MOV 5, ra
-MOV 3, rb
-PRINT rb
-MUL ra, rb
-PRINT rb
-INC rb
-PRINT rb
+mov cx, 3
+mov ax, 2
+pow cx, 2
+print cx
