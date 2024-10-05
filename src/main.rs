@@ -6,7 +6,7 @@ use std::convert::TryInto;
 use std::fs;
 
 mod config;
-const MEMORY_SIZE: usize = 65536;
+const MEMORY_SIZE: usize = 255;
 // args for CLAP (TODO: IMPLEMENT)
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -75,6 +75,7 @@ impl CPU {
         for (i, instruction) in program.iter().enumerate() {
             self.memory[i] = self.encode_instruction(instruction);
         }
+        // println!("{:?}", self.memory);
     }
 
     fn encode_instruction(&self, instruction: &Instruction) -> u16 {
@@ -138,10 +139,11 @@ impl CPU {
 
     fn fetch_instruction(&mut self) -> u16 {
         let config = declare_config();
-        let instruction = self.memory[self.pc];
+        let instruction = self.memory[self.pc]; // each instruction is stored one after another in the "stack"
         self.pc += 1; // add to program counter
         if config.verbose_debug {
             println!("Program Counter:\n{:?}", self.pc);
+            println!("Instruction:\n{:?}", instruction);
         }
         instruction
     }
@@ -169,10 +171,12 @@ impl CPU {
                                                  // match the opcode as hexadecimal values
         match opcode {
             0x1 => {
+                // parse as 4XXX
                 // ADD
                 self.registers[reg1] += self.registers[reg2];
             }
             0x2 => {
+
                 // MOV
                 self.registers[reg1] = value;
             }
@@ -476,11 +480,11 @@ fn path_exists(path: &str) -> bool {
 }
 
 // this is here for debug, please ignore :)
-/*
+#[allow(dead_code)]
 fn print_type<T>(_: &T) {
     println!("{:?}", std::any::type_name::<T>());
 }
-*/
+
 fn remove_comments(f_contents: &mut String) -> String {
     let mut result = String::new();
 
