@@ -100,7 +100,7 @@ impl CPU {
             }
             Some(instruction)
         } else {
-            None // Out of bounds
+            None 
         }
     }
 
@@ -167,7 +167,7 @@ impl CPU {
             if let Some(instruction) = self.fetch_instruction() {
                 self.execute_instruction(instruction);
             } else {
-                self.running = false; // Stop if no instruction is fetched
+                self.running = false;
             }
         }
     }
