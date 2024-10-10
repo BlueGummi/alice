@@ -24,7 +24,7 @@ struct Args {
 
     /// Path to the assembly file
     file: String,
-
+    
     /// Run the binary
     #[clap(short, long)]
     run: bool,

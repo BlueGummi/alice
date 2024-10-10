@@ -1,2 +1,2 @@
-debug = true
-verbose_debug = true
+debug = false
+verbose_debug = false

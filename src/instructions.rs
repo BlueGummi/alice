@@ -13,6 +13,7 @@ pub const DEC_OPCODE: u16 = 0x9;
 pub const PRINT_OPCODE: u16 = 0xa;
 pub const POW_OPCODE: u16 = 0xb;
 pub const MOVR_OPCODE: u16 = 0xc;
+pub const CMP_OPCODE: u16 = 0xd;
 pub const HALT_OPCODE: u16 = 0x0;
 
 // Add instructions here
@@ -30,5 +31,6 @@ pub enum Instruction {
     PRINT(usize),
     POW(usize, u16),
     MOVR(usize, usize),
+    CMP(usize, usize),
     HALT,
 }

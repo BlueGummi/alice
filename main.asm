@@ -1,1 +1,1 @@
-mov ax, dd
+mov ax, 3

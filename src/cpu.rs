@@ -8,6 +8,8 @@ pub struct CPU {
     pub memory: [u16; MEMORY_SIZE],
     pub pc: usize,
     pub running: bool,
+    pub cflag: bool,
+    pub zflag: bool,
 }
 
 impl CPU {
@@ -17,6 +19,8 @@ impl CPU {
             memory: [0; MEMORY_SIZE],
             pc: 0,
             running: false,
+            cflag: false,
+            zflag: false,
         }
     }
 
@@ -49,6 +53,7 @@ impl CPU {
             Instruction::PRINT(src) => (PRINT_OPCODE << 12) | ((*src as u16) << 4 & 0x0F0),
             Instruction::POW(dst, value) => (POW_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | (*value & 0xFF),
             Instruction::MOVR(dst, src) => (MOVR_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0),
+            Instruction::CMP(dst, src) => (CMP_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0), 
             Instruction::HALT => HALT_OPCODE << 12,
         }
     }
