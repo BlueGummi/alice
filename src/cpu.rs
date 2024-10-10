@@ -1,14 +1,10 @@
 use std::fs::File;
 use std::io::{self, Write, Read};
-use crate::integer_to_letter;
-use crate::declare_config;
-use crate::neg_num_err;
-use crate::err_print;
-use crate::instructions::*;
+use crate::*;
 
 // CPU struct
 pub struct CPU {
-    pub registers: [u16; 8],
+    pub registers: [u16; 16],
     pub memory: [u16; MEMORY_SIZE],
     pub pc: usize,
     pub running: bool,
@@ -17,7 +13,7 @@ pub struct CPU {
 impl CPU {
     pub fn new() -> CPU {
         CPU {
-            registers: [0; 8],
+            registers: [0; 16],
             memory: [0; MEMORY_SIZE],
             pc: 0,
             running: false,

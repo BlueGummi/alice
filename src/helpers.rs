@@ -115,3 +115,13 @@ pub fn debug_print(instruc: &str, src: &String, dest: &String, f_contents: &str)
 pub fn print_type<T>(_: &T) {
     println!("{:?}", std::any::type_name::<T>());
 }
+
+pub fn assembler_error<T: ToString>(message: &str, line_number: i32, location: T) {
+    println!(
+        "\"{}\" on line {} is {}",
+        location.to_string(),
+        line_number,
+        message
+    );
+    std::process::exit(0);
+}
