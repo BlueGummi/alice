@@ -1,7 +1,7 @@
 use std::process; 
 use colorized::*;
 
-
+// these are helper functions, not missiong critical, they help.
 pub fn remove_comments(f_contents: &mut String) -> String {
     let mut result = String::new();
 
