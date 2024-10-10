@@ -4,41 +4,7 @@ use crate::integer_to_letter;
 use crate::declare_config;
 use crate::neg_num_err;
 use crate::err_print;
-
-const MEMORY_SIZE: usize = 255;
-
-// Opcode constants
-const ADD_OPCODE: u16 = 0x1;
-const MOV_OPCODE: u16 = 0x2;
-const MUL_OPCODE: u16 = 0x3;
-const SUB_OPCODE: u16 = 0x4;
-const SWAP_OPCODE: u16 = 0x5;
-const DIV_OPCODE: u16 = 0x6;
-const CLR_OPCODE: u16 = 0x7;
-const INC_OPCODE: u16 = 0x8;
-const DEC_OPCODE: u16 = 0x9;
-const PRINT_OPCODE: u16 = 0xa;
-const POW_OPCODE: u16 = 0xb;
-const MOVR_OPCODE: u16 = 0xc;
-const HALT_OPCODE: u16 = 0x0;
-
-// Add instructions here
-#[derive(Debug)]
-pub enum Instruction {
-    ADD(usize, usize),
-    MOV(usize, u16),
-    MUL(usize, usize),
-    SUB(usize, usize),
-    SWAP(usize, usize),
-    DIV(usize, usize),
-    CLR(usize),
-    INC(usize),
-    DEC(usize),
-    PRINT(usize),
-    POW(usize, u16),
-    MOVR(usize, usize),
-    HALT,
-}
+use crate::instructions::*;
 
 // CPU struct
 pub struct CPU {

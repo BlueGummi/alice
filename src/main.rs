@@ -1,14 +1,16 @@
+use clap::Parser;
 use colorized::*;
-use config::Config;
 use std::convert::TryInto;
 use std::fs;
-use clap::Parser; 
 use std::path::Path;
+use config::*;
 
 mod config;
 mod cpu; 
-use cpu::{CPU, Instruction};
 mod helpers;
+mod instructions;
+use instructions::*;
+use cpu::CPU;
 use helpers::*;
 
 #[derive(Parser)]
