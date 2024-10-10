@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, Write, Read};
 use crate::integer_to_letter;
 use crate::declare_config;
 use crate::neg_num_err;
@@ -67,7 +67,10 @@ impl CPU {
                 break;
             }
         }
-        println!("{:?}", self.memory);
+        let config = declare_config();
+        if config.verbose_debug {
+            println!("{:?}", self.memory);
+        }
     }
 
     pub fn encode_instruction(&self, instruction: &Instruction) -> u16 {
@@ -177,6 +180,25 @@ impl CPU {
         for &instruction in &self.memory {
             file.write_all(&instruction.to_le_bytes())?;
         }
+        Ok(())
+    }
+    pub fn load_binary(&mut self, filename: &str) -> io::Result<()> {
+        let mut file = File::open(filename)?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+
+
+        for (i, chunk) in buffer.chunks_exact(2).enumerate() {
+            if i < MEMORY_SIZE {
+
+                let instruction = u16::from_le_bytes([chunk[0], chunk[1]]);
+                self.memory[i] = instruction;
+            } else {
+                eprintln!("Warning: Binary exceeds memory size.");
+                break;
+            }
+        }
+        self.pc = 0; 
         Ok(())
     }
 }

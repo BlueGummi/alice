@@ -10,3 +10,7 @@ print ax
 mov ax, 8
 mov bx, 4
 div ax, bx
+print ax
+print bx
+print cx
+print dx

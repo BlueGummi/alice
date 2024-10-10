@@ -3,8 +3,6 @@ use config::Config;
 use std::convert::TryInto;
 use std::fs;
 use clap::Parser; 
-use std::process::Command; 
-
 use std::path::Path;
 
 mod config;
@@ -13,21 +11,18 @@ use cpu::{CPU, Instruction};
 mod helpers;
 use helpers::*;
 
-// args for CLAP (TODO: IMPLEMENT)
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[derive(Parser)]
 struct Args {
-    #[arg(short, long, default_value = "main.asm")]
+    /// Output file for the binary
+    #[clap(short = 'o', long)]
+    output: Option<String>,
+
+    /// Path to the assembly file
     file: String,
 
-    #[arg(short = 'c', long)]
-    compile: bool, // Indicates if the program should compile
-
-    #[arg(short = 'o', long)]
-    output: Option<String>, // output file name for the binary
-
-    #[arg(short = 'r', long)]
-    run: bool, // indicates if the compiled binary should be run
+    /// Run the binary
+    #[clap(short, long)]
+    run: bool,
 }
 // declare config in config.rs
 pub fn declare_config() -> Config {
@@ -54,44 +49,78 @@ fn main() {
     // Parse command-line arguments
     let args = Args::parse();
 
-    // Read the assembly file
+    // Check if the -o flag is used for compilation
+    if let Some(output_file) = args.output {
+        // Read the assembly file
+        let program = parse_file(read_file(args.file.clone()));
+
+        if config.verbose_debug {
+            println!("{:?}", program);
+        }
+
+        // Load the program into the CPU
+        cpu.load_program(&program);
+
+        // Emit the binary
+        if let Err(e) = cpu.emit_binary(&output_file) {
+            eprintln!("Error writing binary file: {}", e);
+            return;
+        } else {
+            println!("Binary emitted to {}", output_file);
+        }
+        
+        return; // Exit after compiling
+    }
+
+    // If the -r flag is used, run the specified file
+    if args.run {
+        let file_to_run = &args.file; // Use the provided file argument
+
+        // Attempt to load the binary file
+        if let Err(e) = cpu.load_binary(file_to_run) {
+            eprintln!("Error loading binary file: {}", e);
+
+            // If loading the binary fails, assume it's an assembly file and compile it
+            let program = parse_file(read_file(file_to_run.clone()));
+
+            if config.verbose_debug {
+                println!("{:?}", program);
+            }
+
+            // Load the program into the CPU
+            cpu.load_program(&program);
+
+            // Emit default output file if not specified
+            let output_file = format!("{}.bin", file_to_run);
+            if let Err(e) = cpu.emit_binary(&output_file) {
+                eprintln!("Error writing binary file: {}", e);
+                return;
+            } else {
+                println!("Binary emitted to {}", output_file);
+            }
+
+            // Run the newly created binary
+            if let Err(e) = cpu.load_binary(&output_file) {
+                eprintln!("Error loading binary file: {}", e);
+                return;
+            }
+            cpu.run();
+            return; // Exit after running the binary
+        }
+
+        // If it successfully loads the binary, just run it
+        cpu.run();
+        return; // Exit after running the binary
+    }
+
+    // Normal execution flow for assembly if no run flag is used
     let program = parse_file(read_file(args.file.clone()));
 
     if config.verbose_debug {
         println!("{:?}", program);
     }
 
-    // If the -c flag is used, we will compile to a binary
-    if args.compile {
-        // Load the program into the CPU
-        cpu.load_program(&program);
-
-        // If -o flag is provided, emit the binary
-        if let Some(output_file) = args.output {
-            let output_file_str: &str = &output_file; // Convert to &str
-
-            if let Err(e) = cpu.emit_binary(output_file_str) {
-                eprintln!("Error writing binary file: {}", e);
-            } else {
-                println!("Binary emitted to {}", output_file_str);
-
-                // If -r flag is passed, run the binary
-                if args.run {
-                    let status = Command::new(output_file_str)
-                        .status()
-                        .expect("Failed to execute binary");
-                    if !status.success() {
-                        eprintln!("Binary exited with status: {}", status);
-                    }
-                }
-            }
-        } else {
-            eprintln!("Output file name required with -o flag.");
-        }
-        return; // Exit after emitting binary
-    }
-
-    // Normal execution flow
+    // Load the program into the CPU and run it
     cpu.load_program(&program);
     cpu.run();
 
@@ -115,7 +144,6 @@ fn main() {
         );
     }
 }
-
 fn read_file(f_name: String) -> String {
     if Path::new(&f_name).exists() {
         fs::read_to_string(&f_name).expect("File found, read unsuccessful.")
@@ -273,24 +301,4 @@ fn parse_values(src: String, dest: String) -> (usize, usize) {
     };
 
     (src_i, dest_i)
-}
-
-fn debug_print(instruc: &str, src: &String, dest: &String, f_contents: &str) {
-    println!(
-        "\nRemaining line:\n{}",
-        f_contents.trim().color(Colors::YellowFg)
-    );
-    println!("{}", "FOUND INSTRUCTION".color(Colors::BlueFg));
-    print!("{}", "INSTRUCTION:".color(Colors::RedFg));
-    println!("{}\n", instruc.to_uppercase().color(Colors::BrightMagentaFg));
-    print!("{}", "SRC:".color(Colors::RedFg));
-    println!("{}\n", dest.color(Colors::BrightMagentaFg));
-    print!("{}", "DEST:".color(Colors::RedFg));
-    print!("{}\n\n", src.color(Colors::BrightMagentaFg));
-}
-
-// this is here for debug, please ignore :)
-#[allow(dead_code)]
-fn print_type<T>(_: &T) {
-    println!("{:?}", std::any::type_name::<T>());
 }

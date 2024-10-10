@@ -95,3 +95,23 @@ pub fn has_b_with_num(s: &str) -> bool {
     }
     false
 }
+
+pub fn debug_print(instruc: &str, src: &String, dest: &String, f_contents: &str) {
+    println!(
+        "\nRemaining line:\n{}",
+        f_contents.trim().color(Colors::YellowFg)
+    );
+    println!("{}", "FOUND INSTRUCTION".color(Colors::BlueFg));
+    print!("{}", "INSTRUCTION:".color(Colors::RedFg));
+    println!("{}\n", instruc.to_uppercase().color(Colors::BrightMagentaFg));
+    print!("{}", "SRC:".color(Colors::RedFg));
+    println!("{}\n", dest.color(Colors::BrightMagentaFg));
+    print!("{}", "DEST:".color(Colors::RedFg));
+    print!("{}\n\n", src.color(Colors::BrightMagentaFg));
+}
+
+// this is here for debug, please ignore :)
+#[allow(dead_code)]
+pub fn print_type<T>(_: &T) {
+    println!("{:?}", std::any::type_name::<T>());
+}
