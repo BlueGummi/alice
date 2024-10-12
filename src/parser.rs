@@ -107,12 +107,28 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
 
     let instruc = &tokens[0];
     let (dest, src) = parse_operands(tokens);
-
     match instruc.to_uppercase().as_str() {
         "ADD" => Some(Instruction::ADD(dest, src)),
         "SUB" => Some(Instruction::SUB(dest, src)),
         "MUL" => Some(Instruction::MUL(dest, src)),
-        "MOV" => Some(Instruction::MOV(dest, src.try_into().ok()?)),
+        "MOV" => {
+            // Function to determine the instruction based on src
+            fn create_mov_instruction(dest: usize, src: Option<usize>) -> Instruction {
+                match src {
+                    Some(value) => {
+                        if value > 15 {
+                            Instruction::MOV(dest, value.try_into().unwrap()) // Move value
+                        } else {
+                            Instruction::MOVR(dest, value.try_into().unwrap()) // Move from register
+                        }
+                    }
+                    None => Instruction::MOV(dest, 0), // Default to moving 0 if src is None
+                }
+            }
+
+            let instruction = create_mov_instruction(dest, Some(src));
+            Some(instruction)
+        }
         "SWAP" => Some(Instruction::SWAP(dest, src)),
         "DIV" => Some(Instruction::DIV(dest, src)),
         "CLR" => Some(Instruction::CLR(dest)),
