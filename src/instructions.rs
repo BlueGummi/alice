@@ -17,24 +17,22 @@ pub const CMP_OPCODE: u16 = 0xd;
 pub const JMP_OPCODE: u16 = 0xe;
 pub const HALT_OPCODE: u16 = 0x0;
 
-// bro add call you absolute babooon
-
 // Add instructions here
 #[derive(Debug)]
 pub enum Instruction {
-    ADD(usize, usize),
-    MOV(usize, u16),
-    MUL(usize, usize),
-    SUB(usize, usize),
-    SWAP(usize, usize),
-    DIV(usize, usize),
-    CLR(usize),
-    INC(usize),
-    DEC(usize),
-    PRINT(usize),
-    POW(usize, u16),
-    MOVR(usize, usize),
-    CMP(usize, usize),
-    JMP(usize),
+    ADD(u16, u16),
+    MOV(u16, u16),
+    MUL(u16, u16),
+    SUB(u16, u16),
+    SWAP(u16, u16),
+    DIV(u16, u16),
+    CLR(u16),
+    INC(u16),
+    DEC(u16),
+    PRINT(u16),
+    POW(u16, u16),
+    MOVR(u16, u16),
+    CMP(u16, u16),
+    JMP(u16),
     HALT,
 }

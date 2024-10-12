@@ -1,4 +1,4 @@
-use colorized::*;
+use crate::*;
 use std::process;
 
 // these are helper functions, not missiong critical, they help.
@@ -41,7 +41,6 @@ pub fn integer_to_letter(n: usize) -> char {
     }
 }
 
-
 pub fn has_b_with_num(s: &str) -> bool {
     let bytes = s.as_bytes();
     let mut found_b = false;
@@ -82,4 +81,3 @@ pub fn debug_print(instruc: &str, src: &String, dest: &String, f_contents: &str)
 pub fn print_type<T>(_: &T) {
     println!("{:?}", std::any::type_name::<T>());
 }
-

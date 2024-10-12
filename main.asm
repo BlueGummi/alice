@@ -1,3 +1,4 @@
-inc ax
-print ax
-jmp 0
+mov ax, 5
+mov bx, 3
+mov ax, bx
+mov bx, ax

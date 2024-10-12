@@ -104,29 +104,34 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
     if tokens.is_empty() {
         return None; // No instruction found
     }
-
     let instruc = &tokens[0];
-    let (dest, src) = parse_operands(tokens);
+    let (dest, src): (u16, u16) = parse_operands(tokens);
     match instruc.to_uppercase().as_str() {
         "ADD" => Some(Instruction::ADD(dest, src)),
         "SUB" => Some(Instruction::SUB(dest, src)),
         "MUL" => Some(Instruction::MUL(dest, src)),
         "MOV" => {
-            // Function to determine the instruction based on src
-            fn create_mov_instruction(dest: usize, src: Option<usize>) -> Instruction {
+            // Function to create a MOV instruction based on the destination and source
+            fn create_mov_instruction(dest: u16, src: Option<&str>) -> Instruction {
                 match src {
                     Some(value) => {
-                        if value > 15 {
-                            Instruction::MOV(dest, value.try_into().unwrap()) // Move value
+                        // Try to parse the source value as u16
+                        if let Ok(parsed_value) = value.parse::<u16>() {
+                            // If parsed successfully, check if it's a register or immediate value
+                            Instruction::MOV(dest, parsed_value) // Move immediate value
                         } else {
-                            Instruction::MOVR(dest, value.try_into().unwrap()) // Move from register
+                            // If parsing fails, treat the value as a register
+                            let reg_index =
+                                letter_to_integer(value.chars().next().unwrap_or(' ')).unwrap_or(0);
+                            Instruction::MOVR(dest, reg_index.into()) // Move from register
                         }
                     }
                     None => Instruction::MOV(dest, 0), // Default to moving 0 if src is None
                 }
             }
 
-            let instruction = create_mov_instruction(dest, Some(src));
+            // Convert dest and src to u16 and call create_mov_instruction
+            let instruction = create_mov_instruction(dest.try_into().unwrap(), Some(&tokens[2]));
             Some(instruction)
         }
         "SWAP" => Some(Instruction::SWAP(dest, src)),
@@ -151,24 +156,25 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
 }
 
 /// Parses the operands from the tokenized line.
-fn parse_operands(tokens: &[String]) -> (usize, usize) {
+fn parse_operands(tokens: &[String]) -> (u16, u16) {
     let dest = parse_value(&tokens.get(1).unwrap_or(&"0".to_string()));
     let src = parse_value(&tokens.get(2).unwrap_or(&"0".to_string()));
     (dest, src)
 }
 
-/// Converts a token into a usize value, handling both numeric and register inputs.
-fn parse_value(token: &String) -> usize {
+/// Converts a token into a u16 value, handling both numeric and register inputs.
+fn parse_value(token: &String) -> u16 {
     if token.starts_with("b") && has_b_with_num(token) {
         i32::from_str_radix(&token[2..], 2).unwrap_or_else(|_| {
             println!("Error: Not a valid binary number: {}", token);
             std::process::exit(0);
-        }) as usize
-    } else if let Ok(value) = token.parse::<usize>() {
+        }) as u16 // Cast to u16 instead of usize
+    } else if let Ok(value) = token.parse::<u16>() {
+        // Change to parse::<u16>()
         value
     } else {
         letter_to_integer(token.chars().next().unwrap_or(' '))
             .unwrap_or(0)
-            .into()
+            .into() // Ensure this returns a u16
     }
 }

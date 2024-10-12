@@ -6,7 +6,7 @@ use std::io::{self, Read, Write};
 pub struct CPU {
     pub registers: [u16; 16],
     pub memory: [u16; MEMORY_SIZE],
-    pub pc: usize,
+    pub pc: u16, // Change to u16
     pub running: bool,
     pub cflag: bool,
     pub zflag: bool,
@@ -29,7 +29,10 @@ impl CPU {
             if i < MEMORY_SIZE {
                 self.memory[i] = self.encode_instruction(instruction);
             } else {
-                eprintln!("Warning: Program exceeds memory size.");
+                eprintln!(
+                    "{}",
+                    "Warning: Program exceeds memory size.".color(Colors::RedFg)
+                );
                 break;
             }
         }
@@ -78,9 +81,9 @@ impl CPU {
     }
 
     pub fn fetch_instruction(&mut self) -> Option<u16> {
-        if self.pc < MEMORY_SIZE {
+        if self.pc < MEMORY_SIZE as u16 {
             let config = declare_config();
-            let instruction = self.memory[self.pc];
+            let instruction = self.memory[self.pc as usize];
             self.pc += 1;
 
             if config.verbose_debug {
@@ -93,69 +96,68 @@ impl CPU {
         }
     }
 
-    pub fn get_register(&self, index: usize) -> Option<u16> {
-        if index < self.registers.len() {
-            Some(self.registers[index])
+    pub fn get_register(&self, index: u16) -> Option<u16> {
+        if index < self.registers.len() as u16 {
+            Some(self.registers[index as usize])
         } else {
             None
         }
     }
 
-    pub fn print_register(&self, index: usize) {
+    pub fn print_register(&self, index: u16) {
         match self.get_register(index) {
-            Some(value) => println!("{}x: {}", integer_to_letter(index), value),
+            Some(value) => println!("{}x: {}", integer_to_letter(index as usize), value),
             None => println!("Register index {} is out of bounds.", index),
         }
     }
 
     pub fn execute_instruction(&mut self, instruction: u16) {
         let opcode = instruction >> 12;
-        let reg1 = ((instruction >> 8) & 0xF) as usize;
-        let reg2 = ((instruction >> 4) & 0xF) as usize;
+        let reg1 = ((instruction >> 8) & 0xF) as u16; // Change to u16
+        let reg2 = ((instruction >> 4) & 0xF) as u16; // Change to u16
         let value = instruction & 0xFF;
 
         match opcode {
-            ADD_OPCODE => self.registers[reg1] += self.registers[reg2],
-            MOV_OPCODE => self.registers[reg1] = value,
-            MUL_OPCODE => self.registers[reg1] *= self.registers[reg2],
+            ADD_OPCODE => self.registers[reg1 as usize] += self.registers[reg2 as usize],
+            MOV_OPCODE => self.registers[reg1 as usize] = value,
+            MUL_OPCODE => self.registers[reg1 as usize] *= self.registers[reg2 as usize],
             SUB_OPCODE => {
-                if self.registers[reg1] >= self.registers[reg2] {
-                    self.registers[reg1] -= self.registers[reg2];
+                if self.registers[reg1 as usize] >= self.registers[reg2 as usize] {
+                    self.registers[reg1 as usize] -= self.registers[reg2 as usize];
                 } else {
                     neg_num_err("SUB");
                 }
             }
-            SWAP_OPCODE => self.registers.swap(reg1, reg2),
+            SWAP_OPCODE => self.registers.swap(reg1 as usize, reg2 as usize),
             DIV_OPCODE => {
-                if self.registers[reg2] != 0 {
-                    self.registers[reg1] /= self.registers[reg2];
+                if self.registers[reg2 as usize] != 0 {
+                    self.registers[reg1 as usize] /= self.registers[reg2 as usize];
                 } else {
                     self.running = false;
                     err_print("Dividing by zero is not allowed.".to_string());
                 }
             }
-            CLR_OPCODE => self.registers[reg2] = 0,
-            INC_OPCODE => self.registers[reg2] += 1,
+            CLR_OPCODE => self.registers[reg2 as usize] = 0,
+            INC_OPCODE => self.registers[reg2 as usize] += 1,
             DEC_OPCODE => {
-                if self.registers[reg2] >= 1 {
-                    self.registers[reg2] -= 1;
+                if self.registers[reg2 as usize] >= 1 {
+                    self.registers[reg2 as usize] -= 1;
                 } else {
                     neg_num_err("DEC");
                 }
             }
             PRINT_OPCODE => self.print_register(reg2),
-            POW_OPCODE => self.registers[reg1] = u16::pow(self.registers[reg1], value.into()),
-            MOVR_OPCODE => self.registers[reg1] = self.registers[reg2],
+            POW_OPCODE => {
+                self.registers[reg1 as usize] =
+                    u16::pow(self.registers[reg1 as usize], value.into())
+            }
+            MOVR_OPCODE => self.registers[reg1 as usize] = self.registers[reg2 as usize],
             CMP_OPCODE => {
-                if self.registers[reg1] == self.registers[reg2] {
-                    self.zflag = true;
-                } else {
-                    self.zflag = false;
-                }
+                self.zflag = self.registers[reg1 as usize] == self.registers[reg2 as usize];
             }
             JMP_OPCODE => {
                 // Here, we interpret `value` as the new program counter (PC) address
-                let jump_address = value as usize; // Ensure this is cast correctly
+                let jump_address = value as u16; // Ensure this is cast correctly
                 self.pc = jump_address; // Update the program counter to the jump address
             }
             _ => self.running = false,
@@ -180,6 +182,7 @@ impl CPU {
         }
         Ok(())
     }
+
     pub fn load_binary(&mut self, filename: &str) -> io::Result<()> {
         let mut file = File::open(filename)?;
         let mut buffer = Vec::new();
