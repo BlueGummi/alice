@@ -59,6 +59,7 @@ pub fn has_b_with_num(s: &str) -> bool {
     false
 }
 
+#[allow(dead_code)]
 pub fn debug_print(instruc: &str, src: &String, dest: &String, f_contents: &str) {
     println!(
         "\nRemaining line:\n{}",

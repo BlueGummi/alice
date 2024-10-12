@@ -8,7 +8,6 @@ pub struct CPU {
     pub memory: [u16; MEMORY_SIZE],
     pub pc: u16, // Change to u16
     pub running: bool,
-    pub cflag: bool,
     pub zflag: bool,
 }
 
@@ -19,7 +18,6 @@ impl CPU {
             memory: [0; MEMORY_SIZE],
             pc: 0,
             running: false,
-            cflag: false,
             zflag: false,
         }
     }
@@ -162,7 +160,7 @@ impl CPU {
                 self.pc = jump_address; // Update the program counter to the jump address
             }
             NOP_OPCODE => {
-                
+
             }
             _ => self.running = false,
         }
