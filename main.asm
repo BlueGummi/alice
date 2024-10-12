@@ -1,3 +1,3 @@
-mov ax, 3
-mov ax, bx
+inc ax
 print ax
+jmp 0

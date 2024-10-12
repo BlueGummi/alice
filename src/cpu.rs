@@ -72,6 +72,7 @@ impl CPU {
             Instruction::CMP(dst, src) => {
                 (CMP_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
             }
+            Instruction::JMP(src) => (JMP_OPCODE << 12) | ((*src as u16) << 8 & 0xF00),
             Instruction::HALT => HALT_OPCODE << 12,
         }
     }
@@ -152,7 +153,11 @@ impl CPU {
                     self.zflag = false;
                 }
             }
-
+            JMP_OPCODE => {
+                // Here, we interpret `value` as the new program counter (PC) address
+                let jump_address = value as usize; // Ensure this is cast correctly
+                self.pc = jump_address; // Update the program counter to the jump address
+            }
             _ => self.running = false,
         }
     }

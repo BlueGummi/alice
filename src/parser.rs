@@ -139,6 +139,7 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
         "PRINT" => Some(Instruction::PRINT(dest)),
         "POW" => Some(Instruction::POW(dest, src.try_into().ok()?)),
         "MOVR" => Some(Instruction::MOVR(dest, src)),
+        "JMP" => Some(Instruction::JMP(dest)),
         _ => {
             println!(
                 "Error: Unknown instruction: \"{}\" on line {}.",
