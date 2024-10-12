@@ -17,6 +17,8 @@ pub const CMP_OPCODE: u16 = 0xd;
 pub const JMP_OPCODE: u16 = 0xe;
 pub const HALT_OPCODE: u16 = 0x0;
 
+// bro add call you absolute babooon
+
 // Add instructions here
 #[derive(Debug)]
 pub enum Instruction {
