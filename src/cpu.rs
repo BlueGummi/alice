@@ -113,8 +113,8 @@ impl CPU {
 
     pub fn execute_instruction(&mut self, instruction: u16) {
         let opcode = instruction >> 12;
-        let reg1 = ((instruction >> 8) & 0xF); // Change to u16
-        let reg2 = ((instruction >> 4) & 0xF); // Change to u16
+        let reg1 = (instruction >> 8) & 0xF; // Change to u16
+        let reg2 = (instruction >> 4) & 0xF; // Change to u16
         let value = instruction & 0xFF;
 
         match opcode {

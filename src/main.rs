@@ -1,6 +1,6 @@
 use clap::Parser;
 use colorized::*;
-use std::{convert::TryInto, fs};
+use std::fs;
 mod config;
 mod cpu;
 mod helpers;
