@@ -78,7 +78,7 @@ pub fn parse_file(f_contents: String) -> Vec<Instruction> {
                     std::process::exit(0);
                 }
             }
-        } else if let Some(ref func_name) = current_function {
+        } else if let Some(ref _func_name) = current_function {
             // Collect instructions for the current function
             if let Some(instruction) = parse_instruction(tokens, line_number as i32) {
                 current_function_instructions.push(instruction);
