@@ -127,7 +127,11 @@ impl CPU {
             PRINT_OPCODE => self.print_register(reg2),
             POW_OPCODE => self.registers[reg1] = u16::pow(self.registers[reg1], value.into()),
             MOVR_OPCODE => self.registers[reg1] = self.registers[reg2],
-            CMP_OPCODE => if self.registers[reg1] = self.registers[reg2]
+            CMP_OPCODE => if self.registers[reg1] == self.registers[reg2] {
+                self.zflag = true;
+            } else {
+                self.zflag = false;
+            }
              
             _ => self.running = false,
         }
