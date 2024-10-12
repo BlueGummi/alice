@@ -1,6 +1,7 @@
 use crate::*;
 use std::fs;
 use std::path::Path;
+use std::collections::HashMap;
 
 /// Reads the contents of a file or creates it with default content.
 pub fn read_file(f_name: &String) -> String {
@@ -24,7 +25,6 @@ pub fn read_file(f_name: &String) -> String {
 fn lex(input: &str) -> Vec<Vec<String>> {
     input.lines()
         .map(|line| {
-            // Split the line on the comment delimiter and take the first part
             let clean_line = line.split(';').next().unwrap_or(line);
             clean_line.split_whitespace()
                 .filter(|token| !token.is_empty()) // Ignore empty tokens
@@ -34,11 +34,14 @@ fn lex(input: &str) -> Vec<Vec<String>> {
         .collect()
 }
 
-/// Parses the tokenized lines into instructions.
+/// Parses the tokenized lines into instructions, handling functions internally.
 pub fn parse_file(f_contents: String) -> Vec<Instruction> {
     let mut instructions = Vec::new();
+    let mut functions = HashMap::new();
     let config = declare_config();
     let tokens = lex(&f_contents);
+    let mut current_function: Option<String> = None;
+    let mut current_function_instructions = Vec::new();
 
     if config.verbose_debug {
         println!("Tokenized instructions:\n{:?}", tokens);
@@ -49,16 +52,41 @@ pub fn parse_file(f_contents: String) -> Vec<Instruction> {
             continue; // Skip empty lines
         }
 
-        if let Some(instruction) = parse_instruction(tokens, line_number as i32) {
+        if tokens[0].starts_with('.') {
+            if tokens[0] == ".end" {
+                if let Some(func_name) = current_function.take() {
+                    functions.insert(func_name, current_function_instructions);
+                    current_function_instructions = Vec::new(); // Reset for next function
+                } else {
+                    println!("Error: .end without a corresponding function on line {}.", line_number);
+                    std::process::exit(0);
+                }
+            } else {
+                // Start a new function
+                if current_function.is_none() {
+                    current_function = Some(tokens[0].clone());
+                } else {
+                    println!("Error: Nested function definitions are not allowed on line {}.", line_number);
+                    std::process::exit(0);
+                }
+            }
+        } else if let Some(ref func_name) = current_function {
+            // Collect instructions for the current function
+            if let Some(instruction) = parse_instruction(tokens, line_number as i32) {
+                current_function_instructions.push(instruction);
+            }
+        } else if let Some(instruction) = parse_instruction(tokens, line_number as i32) {
             instructions.push(instruction);
         }
     }
 
-    instructions.push(Instruction::HALT); // Ensure HALT at the end
-
     if config.verbose_debug {
-        println!("{:?}", instructions);
+        println!("Global instructions: {:?}", instructions);
+        println!("Functions: {:?}", functions);
     }
+
+    // Ensure HALT at the end of global instructions
+    instructions.push(Instruction::HALT); 
 
     instructions
 }
