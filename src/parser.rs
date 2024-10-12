@@ -162,6 +162,7 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
         "POW" => Some(Instruction::POW(dest, src)),
         "MOVR" => Some(Instruction::MOVR(dest, src)),
         "JMP" => Some(Instruction::JMP(dest)),
+        "NOP" => Some(Instruction::NOP),
         _ => {
             // Handle unknown instructions
             println!(

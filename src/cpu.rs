@@ -77,6 +77,7 @@ impl CPU {
             }
             Instruction::JMP(src) => (JMP_OPCODE << 12) | ((*src) << 8 & 0xF00),
             Instruction::HALT => HALT_OPCODE << 12,
+            Instruction::NOP => NOP_OPCODE <<12,
         }
     }
 
@@ -159,6 +160,9 @@ impl CPU {
                 // Here, we interpret `value` as the new program counter (PC) address
                 let jump_address = value; // Ensure this is cast correctly
                 self.pc = jump_address; // Update the program counter to the jump address
+            }
+            NOP_OPCODE => {
+                
             }
             _ => self.running = false,
         }

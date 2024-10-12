@@ -15,6 +15,7 @@ pub const POW_OPCODE: u16 = 0xb;
 pub const MOVR_OPCODE: u16 = 0xc;
 pub const CMP_OPCODE: u16 = 0xd;
 pub const JMP_OPCODE: u16 = 0xe;
+pub const NOP_OPCODE: u16 = 0xf;
 pub const HALT_OPCODE: u16 = 0x0;
 
 // Add instructions here
@@ -34,5 +35,6 @@ pub enum Instruction {
     MOVR(u16, u16),
     CMP(u16, u16),
     JMP(u16),
+    NOP,
     HALT,
 }

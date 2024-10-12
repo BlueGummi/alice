@@ -6,3 +6,8 @@ mov bx, ax
 mov ax, bx
 mov cx, dx
 .end
+nop
+nop
+nop
+nop
+nop
