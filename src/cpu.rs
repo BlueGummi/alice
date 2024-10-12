@@ -45,37 +45,37 @@ impl CPU {
     pub fn encode_instruction(&self, instruction: &Instruction) -> u16 {
         match instruction {
             Instruction::ADD(dst, src) => {
-                (ADD_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+                (ADD_OPCODE << 12) | ((*dst) << 8 & 0xF00) | ((*src) << 4 & 0x0F0)
             }
             Instruction::MOV(dst, value) => {
-                (MOV_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | (*value & 0xFF)
+                (MOV_OPCODE << 12) | ((*dst) << 8 & 0xF00) | (*value & 0xFF)
             }
             Instruction::MUL(dst, src) => {
-                (MUL_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+                (MUL_OPCODE << 12) | ((*dst) << 8 & 0xF00) | ((*src) << 4 & 0x0F0)
             }
             Instruction::SUB(dst, src) => {
-                (SUB_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+                (SUB_OPCODE << 12) | ((*dst) << 8 & 0xF00) | ((*src) << 4 & 0x0F0)
             }
             Instruction::SWAP(dst, src) => {
-                (SWAP_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+                (SWAP_OPCODE << 12) | ((*dst) << 8 & 0xF00) | ((*src) << 4 & 0x0F0)
             }
             Instruction::DIV(dst, src) => {
-                (DIV_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+                (DIV_OPCODE << 12) | ((*dst) << 8 & 0xF00) | ((*src) << 4 & 0x0F0)
             }
-            Instruction::CLR(src) => (CLR_OPCODE << 12) | ((*src as u16) << 4 & 0x0F0),
-            Instruction::INC(src) => (INC_OPCODE << 12) | ((*src as u16) << 4),
-            Instruction::DEC(src) => (DEC_OPCODE << 12) | ((*src as u16) << 4 & 0x0F0),
-            Instruction::PRINT(src) => (PRINT_OPCODE << 12) | ((*src as u16) << 4 & 0x0F0),
+            Instruction::CLR(src) => (CLR_OPCODE << 12) | ((*src) << 4 & 0x0F0),
+            Instruction::INC(src) => (INC_OPCODE << 12) | ((*src) << 4),
+            Instruction::DEC(src) => (DEC_OPCODE << 12) | ((*src) << 4 & 0x0F0),
+            Instruction::PRINT(src) => (PRINT_OPCODE << 12) | ((*src) << 4 & 0x0F0),
             Instruction::POW(dst, value) => {
-                (POW_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | (*value & 0xFF)
+                (POW_OPCODE << 12) | ((*dst) << 8 & 0xF00) | (*value & 0xFF)
             }
             Instruction::MOVR(dst, src) => {
-                (MOVR_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+                (MOVR_OPCODE << 12) | ((*dst) << 8 & 0xF00) | ((*src) << 4 & 0x0F0)
             }
             Instruction::CMP(dst, src) => {
-                (CMP_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+                (CMP_OPCODE << 12) | ((*dst) << 8 & 0xF00) | ((*src) << 4 & 0x0F0)
             }
-            Instruction::JMP(src) => (JMP_OPCODE << 12) | ((*src as u16) << 8 & 0xF00),
+            Instruction::JMP(src) => (JMP_OPCODE << 12) | ((*src) << 8 & 0xF00),
             Instruction::HALT => HALT_OPCODE << 12,
         }
     }
@@ -113,8 +113,8 @@ impl CPU {
 
     pub fn execute_instruction(&mut self, instruction: u16) {
         let opcode = instruction >> 12;
-        let reg1 = ((instruction >> 8) & 0xF) as u16; // Change to u16
-        let reg2 = ((instruction >> 4) & 0xF) as u16; // Change to u16
+        let reg1 = ((instruction >> 8) & 0xF); // Change to u16
+        let reg2 = ((instruction >> 4) & 0xF); // Change to u16
         let value = instruction & 0xFF;
 
         match opcode {
@@ -157,7 +157,7 @@ impl CPU {
             }
             JMP_OPCODE => {
                 // Here, we interpret `value` as the new program counter (PC) address
-                let jump_address = value as u16; // Ensure this is cast correctly
+                let jump_address = value; // Ensure this is cast correctly
                 self.pc = jump_address; // Update the program counter to the jump address
             }
             _ => self.running = false,

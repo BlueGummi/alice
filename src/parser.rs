@@ -6,14 +6,14 @@ use std::path::Path;
 /// Reads the contents of a file or creates it with default content.
 pub fn read_file(f_name: &String) -> String {
     if Path::new(&f_name).exists() {
-        fs::read_to_string(&f_name).unwrap_or_else(|_| {
+        fs::read_to_string(f_name).unwrap_or_else(|_| {
             println!("Error reading file '{}'. Exiting.", f_name);
             std::process::exit(1);
         })
     } else {
         println!("Could not find file; creating it.");
         let default_content = "MOV 1, 5\nMOV 2, 3\nADD 0, 1\nSUB 1, 2\nMUL 1, 2";
-        fs::write(&f_name, default_content).unwrap_or_else(|_| {
+        fs::write(f_name, default_content).unwrap_or_else(|_| {
             println!("Could not write to file '{}'. Exiting.", f_name);
             std::process::exit(1);
         });
@@ -131,7 +131,7 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
             }
 
             // Convert dest and src to u16 and call create_mov_instruction
-            let instruction = create_mov_instruction(dest.try_into().unwrap(), Some(&tokens[2]));
+            let instruction = create_mov_instruction(dest, Some(&tokens[2]));
             Some(instruction)
         }
         "SWAP" => Some(Instruction::SWAP(dest, src)),
@@ -142,7 +142,7 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
         "CMP" => Some(Instruction::CMP(dest, src)),
         "HALT" => Some(Instruction::HALT),
         "PRINT" => Some(Instruction::PRINT(dest)),
-        "POW" => Some(Instruction::POW(dest, src.try_into().ok()?)),
+        "POW" => Some(Instruction::POW(dest, src)),
         "MOVR" => Some(Instruction::MOVR(dest, src)),
         "JMP" => Some(Instruction::JMP(dest)),
         _ => {
@@ -157,8 +157,8 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
 
 /// Parses the operands from the tokenized line.
 fn parse_operands(tokens: &[String]) -> (u16, u16) {
-    let dest = parse_value(&tokens.get(1).unwrap_or(&"0".to_string()));
-    let src = parse_value(&tokens.get(2).unwrap_or(&"0".to_string()));
+    let dest = parse_value(tokens.get(1).unwrap_or(&"0".to_string()));
+    let src = parse_value(tokens.get(2).unwrap_or(&"0".to_string()));
     (dest, src)
 }
 
