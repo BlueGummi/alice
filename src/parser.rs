@@ -69,7 +69,7 @@ pub fn parse_file(f_contents: String) -> Vec<Instruction> {
             } else {
                 // Start a new function
                 if current_function.is_none() {
-                    current_function = Some(tokens[0].clone());
+                    current_function = Some(tokens[0].to_string());
                 } else {
                     println!(
                         "Error: Nested function definitions are not allowed on line {}.",
