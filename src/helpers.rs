@@ -1,5 +1,5 @@
-use std::process; 
 use colorized::*;
+use std::process;
 
 // these are helper functions, not missiong critical, they help.
 pub fn remove_comments(f_contents: &mut String) -> String {
@@ -29,7 +29,8 @@ pub fn delete_last_letter(s: &str) -> &str {
 }
 
 pub fn append_line_numbers(input: &str) -> String {
-    input.lines()
+    input
+        .lines()
         .enumerate()
         .map(|(i, line)| format!("{} {}", i + 1, line))
         .collect::<Vec<_>>()
@@ -103,7 +104,10 @@ pub fn debug_print(instruc: &str, src: &String, dest: &String, f_contents: &str)
     );
     println!("{}", "FOUND INSTRUCTION".color(Colors::BlueFg));
     print!("{}", "INSTRUCTION:".color(Colors::RedFg));
-    println!("{}\n", instruc.to_uppercase().color(Colors::BrightMagentaFg));
+    println!(
+        "{}\n",
+        instruc.to_uppercase().color(Colors::BrightMagentaFg)
+    );
     print!("{}", "SRC:".color(Colors::RedFg));
     println!("{}\n", dest.color(Colors::BrightMagentaFg));
     print!("{}", "DEST:".color(Colors::RedFg));

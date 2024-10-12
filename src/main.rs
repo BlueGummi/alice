@@ -1,20 +1,16 @@
 use clap::Parser;
 use colorized::*;
-use std::{
-    fs,
-    path::Path,
-    convert::TryInto,
-};
+use std::{convert::TryInto, fs};
 mod config;
-mod cpu; 
+mod cpu;
 mod helpers;
 mod instructions;
 mod parser;
-use parser::*;
-use instructions::*;
+use config::*;
 use cpu::*;
 use helpers::*;
-use config::*;
+use instructions::*;
+use parser::*;
 
 #[derive(Parser)]
 struct Args {
@@ -24,7 +20,7 @@ struct Args {
 
     /// Path to the assembly file
     file: String,
-    
+
     /// Run the binary
     #[clap(short, long)]
     run: bool,
@@ -73,7 +69,7 @@ fn main() {
         } else {
             println!("Binary emitted to {}", output_file);
         }
-        
+
         return; // Exit after compiling
     }
 
@@ -132,11 +128,7 @@ fn main() {
     // Print register values if debug is enabled
     if config.debug || config.verbose_debug {
         for (i, &value) in cpu.registers.iter().enumerate() {
-            println!(
-                "R{}: {}",
-                i,
-                value.to_string().color(Colors::CyanFg)
-            ); // Print out registers
+            println!("R{}: {}", i, value.to_string().color(Colors::CyanFg)); // Print out registers
         }
     }
 

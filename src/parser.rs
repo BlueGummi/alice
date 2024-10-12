@@ -1,7 +1,7 @@
 use crate::*;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::collections::HashMap;
 
 /// Reads the contents of a file or creates it with default content.
 pub fn read_file(f_name: &String) -> String {
@@ -23,10 +23,12 @@ pub fn read_file(f_name: &String) -> String {
 
 /// Lexer to tokenize the assembly code.
 fn lex(input: &str) -> Vec<Vec<String>> {
-    input.lines()
+    input
+        .lines()
         .map(|line| {
             let clean_line = line.split(';').next().unwrap_or(line);
-            clean_line.split_whitespace()
+            clean_line
+                .split_whitespace()
                 .filter(|token| !token.is_empty()) // Ignore empty tokens
                 .map(|token| token.to_string())
                 .collect()
@@ -58,7 +60,10 @@ pub fn parse_file(f_contents: String) -> Vec<Instruction> {
                     functions.insert(func_name, current_function_instructions);
                     current_function_instructions = Vec::new(); // Reset for next function
                 } else {
-                    println!("Error: .end without a corresponding function on line {}.", line_number);
+                    println!(
+                        "Error: .end without a corresponding function on line {}.",
+                        line_number
+                    );
                     std::process::exit(0);
                 }
             } else {
@@ -66,7 +71,10 @@ pub fn parse_file(f_contents: String) -> Vec<Instruction> {
                 if current_function.is_none() {
                     current_function = Some(tokens[0].clone());
                 } else {
-                    println!("Error: Nested function definitions are not allowed on line {}.", line_number);
+                    println!(
+                        "Error: Nested function definitions are not allowed on line {}.",
+                        line_number
+                    );
                     std::process::exit(0);
                 }
             }
@@ -86,7 +94,7 @@ pub fn parse_file(f_contents: String) -> Vec<Instruction> {
     }
 
     // Ensure HALT at the end of global instructions
-    instructions.push(Instruction::HALT); 
+    instructions.push(Instruction::HALT);
 
     instructions
 }
@@ -116,7 +124,10 @@ fn parse_instruction(tokens: &[String], line_number: i32) -> Option<Instruction>
         "POW" => Some(Instruction::POW(dest, src.try_into().ok()?)),
         "MOVR" => Some(Instruction::MOVR(dest, src)),
         _ => {
-            println!("Error: Unknown instruction: \"{}\" on line {}.", instruc, line_number);
+            println!(
+                "Error: Unknown instruction: \"{}\" on line {}.",
+                instruc, line_number
+            );
             std::process::exit(0);
         }
     }
@@ -139,6 +150,8 @@ fn parse_value(token: &String) -> usize {
     } else if let Ok(value) = token.parse::<usize>() {
         value
     } else {
-        letter_to_integer(token.chars().next().unwrap_or(' ')).unwrap_or(0).into()
+        letter_to_integer(token.chars().next().unwrap_or(' '))
+            .unwrap_or(0)
+            .into()
     }
 }

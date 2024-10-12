@@ -1,6 +1,6 @@
-use std::fs::File;
-use std::io::{self, Write, Read};
 use crate::*;
+use std::fs::File;
+use std::io::{self, Read, Write};
 
 // CPU struct
 pub struct CPU {
@@ -41,19 +41,37 @@ impl CPU {
 
     pub fn encode_instruction(&self, instruction: &Instruction) -> u16 {
         match instruction {
-            Instruction::ADD(dst, src) => (ADD_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0),
-            Instruction::MOV(dst, value) => (MOV_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | (*value & 0xFF),
-            Instruction::MUL(dst, src) => (MUL_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0),
-            Instruction::SUB(dst, src) => (SUB_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0),
-            Instruction::SWAP(dst, src) => (SWAP_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0),
-            Instruction::DIV(dst, src) => (DIV_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0),
+            Instruction::ADD(dst, src) => {
+                (ADD_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+            }
+            Instruction::MOV(dst, value) => {
+                (MOV_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | (*value & 0xFF)
+            }
+            Instruction::MUL(dst, src) => {
+                (MUL_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+            }
+            Instruction::SUB(dst, src) => {
+                (SUB_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+            }
+            Instruction::SWAP(dst, src) => {
+                (SWAP_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+            }
+            Instruction::DIV(dst, src) => {
+                (DIV_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+            }
             Instruction::CLR(src) => (CLR_OPCODE << 12) | ((*src as u16) << 4 & 0x0F0),
             Instruction::INC(src) => (INC_OPCODE << 12) | ((*src as u16) << 4),
             Instruction::DEC(src) => (DEC_OPCODE << 12) | ((*src as u16) << 4 & 0x0F0),
             Instruction::PRINT(src) => (PRINT_OPCODE << 12) | ((*src as u16) << 4 & 0x0F0),
-            Instruction::POW(dst, value) => (POW_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | (*value & 0xFF),
-            Instruction::MOVR(dst, src) => (MOVR_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0),
-            Instruction::CMP(dst, src) => (CMP_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0), 
+            Instruction::POW(dst, value) => {
+                (POW_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | (*value & 0xFF)
+            }
+            Instruction::MOVR(dst, src) => {
+                (MOVR_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+            }
+            Instruction::CMP(dst, src) => {
+                (CMP_OPCODE << 12) | ((*dst as u16) << 8 & 0xF00) | ((*src as u16) << 4 & 0x0F0)
+            }
             Instruction::HALT => HALT_OPCODE << 12,
         }
     }
@@ -70,7 +88,7 @@ impl CPU {
             }
             Some(instruction)
         } else {
-            None 
+            None
         }
     }
 
@@ -127,12 +145,14 @@ impl CPU {
             PRINT_OPCODE => self.print_register(reg2),
             POW_OPCODE => self.registers[reg1] = u16::pow(self.registers[reg1], value.into()),
             MOVR_OPCODE => self.registers[reg1] = self.registers[reg2],
-            CMP_OPCODE => if self.registers[reg1] == self.registers[reg2] {
-                self.zflag = true;
-            } else {
-                self.zflag = false;
+            CMP_OPCODE => {
+                if self.registers[reg1] == self.registers[reg2] {
+                    self.zflag = true;
+                } else {
+                    self.zflag = false;
+                }
             }
-             
+
             _ => self.running = false,
         }
     }
@@ -160,10 +180,8 @@ impl CPU {
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)?;
 
-
         for (i, chunk) in buffer.chunks_exact(2).enumerate() {
             if i < MEMORY_SIZE {
-
                 let instruction = u16::from_le_bytes([chunk[0], chunk[1]]);
                 self.memory[i] = instruction;
             } else {
@@ -171,7 +189,7 @@ impl CPU {
                 break;
             }
         }
-        self.pc = 0; 
+        self.pc = 0;
         Ok(())
     }
 }
