@@ -180,7 +180,9 @@ impl CPU {
     pub fn emit_binary(&self, filename: &str) -> io::Result<()> {
         let mut file = File::create(filename)?;
         for &instruction in &self.memory {
-            file.write_all(&instruction.to_le_bytes())?;
+            if instruction != 0 { 
+                file.write_all(&instruction.to_le_bytes())?;
+            }
         }
         Ok(())
     }
