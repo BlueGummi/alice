@@ -75,7 +75,7 @@ impl CPU {
             }
             Instruction::JMP(src) => (JMP_OPCODE << 12) | ((*src) << 8 & 0xF00),
             Instruction::HALT => HALT_OPCODE << 12,
-            Instruction::NOP => NOP_OPCODE <<12,
+            Instruction::NOP => NOP_OPCODE << 12,
         }
     }
 
@@ -159,9 +159,7 @@ impl CPU {
                 let jump_address = value; // Ensure this is cast correctly
                 self.pc = jump_address; // Update the program counter to the jump address
             }
-            NOP_OPCODE => {
-
-            }
+            NOP_OPCODE => {}
             _ => self.running = false,
         }
     }
@@ -180,7 +178,7 @@ impl CPU {
     pub fn emit_binary(&self, filename: &str) -> io::Result<()> {
         let mut file = File::create(filename)?;
         for &instruction in &self.memory {
-            if instruction != 0 { 
+            if instruction != 0 {
                 file.write_all(&instruction.to_le_bytes())?;
             }
         }
