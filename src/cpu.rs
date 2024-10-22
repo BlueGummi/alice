@@ -61,7 +61,7 @@ impl CPU {
                 (DIV_OPCODE << 12) | ((*dst) << 8 & 0xF00) | ((*src) << 4 & 0x0F0)
             }
             Instruction::CLR(src) => (CLR_OPCODE << 12) | ((*src) << 4 & 0x0F0),
-            Instruction::INC(src) => (INC_OPCODE << 12) | ((*src) << 4),
+            Instruction::INC(src) => (INC_OPCODE << 12) | ((*src) << 4 & 0x0F0),
             Instruction::DEC(src) => (DEC_OPCODE << 12) | ((*src) << 4 & 0x0F0),
             Instruction::PRINT(src) => (PRINT_OPCODE << 12) | ((*src) << 4 & 0x0F0),
             Instruction::POW(dst, value) => {
