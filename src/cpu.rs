@@ -179,7 +179,7 @@ impl CPU {
         let mut file = File::create(filename)?;
         for &instruction in &self.memory {
             if instruction != 0 {
-                file.write_all(&instruction.to_le_bytes())?;
+                file.write_all(&instruction.to_be_bytes())?;
             }
         }
         Ok(())
@@ -192,7 +192,7 @@ impl CPU {
 
         for (i, chunk) in buffer.chunks_exact(2).enumerate() {
             if i < MEMORY_SIZE {
-                let instruction = u16::from_le_bytes([chunk[0], chunk[1]]);
+                let instruction = u16::from_be_bytes([chunk[0], chunk[1]]);
                 self.memory[i] = instruction;
             } else {
                 eprintln!("Warning: Binary exceeds memory size.");
