@@ -6,7 +6,7 @@
 
 # Overview
 
-ALICE, the Architecture Language Interpreter and CPU Emulator.
+ALICE, the Assembly Language Interpreter and CPU Emulator.
 
 This program is a **16 bit CPU emulator**, capable of **assembling assembly** files written for it and **running the binaries**, or **assembling and running** the assembly without emitting a binary.
 
