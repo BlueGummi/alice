@@ -1,12 +1,9 @@
-# THIS IS AN OLD, DEPRECATED, POC PROJECT.
+# ALICE, the Assembly Language Interpreter and CPU Emulator.
 
-
-
-
+This project was a POC and is no longer being maintained or changed.
 
 # Overview
 
-ALICE, the Assembly Language Interpreter and CPU Emulator.
 
 This program is a **16 bit CPU emulator**, capable of **assembling assembly** files written for it and **running the binaries**, or **assembling and running** the assembly without emitting a binary.
 
