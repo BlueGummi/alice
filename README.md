@@ -5,6 +5,9 @@
 
 
 # Overview
+
+ALICE, the Architecture Language Interpreter and CPU Emulator.
+
 This program is a **16 bit CPU emulator**, capable of **assembling assembly** files written for it and **running the binaries**, or **assembling and running** the assembly without emitting a binary.
 
 # Installation
@@ -14,18 +17,18 @@ This program currently **does not have binaries**, thus, it **must be built from
 To build this program, RustC (the Rust Compiler), git, and vargo must be installed on the system.
 Installation commands (OS-agnostic):
 
-`git clone https://github.com/BlueGummi/cpuemu.git`
+`git clone https://github.com/BlueGummi/alice.git`
 
-`cd cpuemu`
+`cd alice`
 
 `cargo build --release`
 
-To simplify running the binary, an **alias** can be created to the binary located at `./target/release/cpuemu` (or cpuemu.exe if the host system is Windows).
+To simplify running the binary, an **alias** can be created to the binary located at `./target/release/alice` (or alice.exe if the host system is Windows).
 
-`alias cpu='./target/release/cpuemu'`
+`alias cpu='./target/release/alice'`
 
 Or the equivalent for **Windows**,
-`set-alias cpu` and enter `target/release/cpuemu.exe`
+`set-alias cpu` and enter `target/release/alice.exe`
 
 # How does it work?
 
